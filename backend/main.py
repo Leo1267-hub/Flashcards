@@ -1,13 +1,18 @@
 from fastapi import FastAPI,HTTPException,Depends,Query
+from contextlib import asynccontextmanager
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from pydantic import BaseModel,ConfigDict,Field
-from database import get_db,engine,Base
-from models import Deck,Card
+from backend.database import get_db,engine,Base
+from backend.models import Deck,Card
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
 
-app = FastAPI()
-Base.metadata.create_all(bind=engine)
+app = FastAPI(lifespan=lifespan)
+
 
 class DeckCreate(BaseModel):
     name:str = Field(min_length=1,max_length=100)
