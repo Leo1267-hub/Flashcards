@@ -2,9 +2,12 @@ from fastapi import FastAPI,HTTPException,Depends,Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from pydantic import BaseModel,ConfigDict,Field
-from database import get_db
+from database import get_db,engine,Base
 from models import Deck,Card
+
+
 app = FastAPI()
+Base.metadata.create_all(bind=engine)
 
 class DeckCreate(BaseModel):
     name:str = Field(min_length=1,max_length=100)
@@ -111,7 +114,7 @@ def delete_deck(deck_id:int,db:Session = Depends(get_db)):
 
 @app.post('/decks/{deck_id}/cards',status_code=201,tags=['Cards'],response_model=CardResponse)
 def create_card(deck_id:int, card:CardCreate,db:Session = Depends(get_db)):
-    deck = check_deck(deck_id,db)
+    check_deck(deck_id,db)
     db_card = Card(
         deck_id= deck_id,
         front = card.front,
