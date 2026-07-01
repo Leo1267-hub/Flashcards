@@ -23,6 +23,7 @@ async def test_get_decks_returns_decks_and_honors_limit(ac):
 
 
 @pytest.mark.asyncio
+# parametrize is used to test multiple invalid limit values, when we run params = { "limit": limit } in the get request, it will test for each value in the list [0, -1, 101]
 @pytest.mark.parametrize("limit", [0, -1, 101])
 async def test_get_decks_rejects_invalid_limit(ac, limit):
     response = await ac.get("/decks", params={"limit": limit})
