@@ -1,0 +1,42 @@
+import pytest
+
+from tests.helpers import create_card, create_deck
+
+
+@pytest.mark.asyncio
+async def test_get_deck_cards_returns_only_cards_from_that_deck(ac):
+    deck = await create_deck(ac, "Python")
+    other_deck = await create_deck(ac, "Networking")
+    card = await create_card(ac, deck["id"])
+    await create_card(ac, other_deck["id"], "What is TCP?", "A protocol")
+
+    response = await ac.get(f'/decks/{deck["id"]}/cards')
+
+    assert response.status_code == 200
+    assert response.json() == [card]
+
+
+@pytest.mark.asyncio
+async def test_get_cards_for_missing_deck_returns_404(ac):
+    response = await ac.get("/decks/999999/cards")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Deck not found"}
+
+
+@pytest.mark.asyncio
+async def test_get_card(ac):
+    deck = await create_deck(ac)
+    card = await create_card(ac, deck["id"])
+    response = await ac.get(f'/cards/{card["id"]}')
+
+    assert response.status_code == 200
+    assert response.json() == card
+
+
+@pytest.mark.asyncio
+async def test_get_missing_card_returns_404(ac):
+    response = await ac.get("/cards/999999")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Card not found"}
