@@ -6,12 +6,12 @@ from sqlalchemy.orm import sessionmaker
 from backend.main import app
 from backend.database import Base, get_db
 from backend.models import Deck, Card
+from backend.config import settings
 
-TEST_DATABASE_URL = "sqlite:///./test_flashcards.db"
+TEST_DATABASE_URL = settings.test_database_url
 
 test_engine = create_engine(
     TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False}
 )
 
 TestSessionLocal = sessionmaker(
