@@ -16,8 +16,11 @@ class Deck(Base):
         nullable = True
     )
     
-    cards: Mapped[list[Card]] = relationship(back_populates='deck',
-                                             cascade="all, delete-orphan")
+    cards: Mapped[list[Card]] = relationship(
+        back_populates='deck',
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
     
     @property
     def card_count(self) -> int:
