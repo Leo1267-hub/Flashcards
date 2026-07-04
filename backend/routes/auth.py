@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends,HTTPException, Response
-from authx import AuthX, AuthXConfig
+from backend.auth import auth, auth_config
 from backend.schemas.auth import UserCreate,UserLogin
-from backend.config import settings
 from backend.database import get_db
 from backend.models import User
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,14 +9,6 @@ from sqlalchemy import select
 
 
 router = APIRouter(tags=["Authentication"])
-
-config = AuthXConfig(
-    JWT_SECRET_KEY=settings.jwt_secret_key,
-    JWT_ACCESS_COOKIE_NAME="access_token",
-    JWT_TOKEN_LOCATION=["cookies"],
-)
-
-auth = AuthX(config=config)
 
 
 @router.post('/signup')
@@ -41,7 +32,7 @@ async def signup(credentials: UserCreate,
     await db.commit()
     await db.refresh(new_user)
     access_token = auth.create_access_token(uid=credentials.username)
-    response.set_cookie(key=config.JWT_ACCESS_COOKIE_NAME,
+    response.set_cookie(key=auth_config.JWT_ACCESS_COOKIE_NAME,
             value=access_token
             )
     return {"message": "User created successfully", "user_id": new_user.id}
@@ -57,7 +48,7 @@ async def login(credentials: UserLogin,
     if user == None or not verify_password(credentials.password,user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     access_token = auth.create_access_token(uid=credentials.username)
-    response.set_cookie(key=config.JWT_ACCESS_COOKIE_NAME,
+    response.set_cookie(key=auth_config.JWT_ACCESS_COOKIE_NAME,
                         value=access_token
                         )
     return {"message": "successfully", "user_id": user.id}
@@ -65,5 +56,8 @@ async def login(credentials: UserLogin,
 @router.get("/protected", dependencies=[Depends(auth.access_token_required)])
 def protected():
     return {"message": "Hello World"}
-    
+
+@router.get("/me")
+async def me(payload=Depends(auth.access_token_required)):
+    return payload
     
