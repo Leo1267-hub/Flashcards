@@ -6,14 +6,16 @@ from backend.database import get_db
 from sqlalchemy import select
 
 async def check_deck(deck_id: int, db: AsyncSession, current_user: User) -> Deck:
-    deck = await db.get(Deck, deck_id).where(Deck.user_id == current_user.id)
+    deck = await db.execute(select(Deck).where(Deck.id == deck_id, Deck.user_id == current_user.id))
+    deck = deck.scalar_one_or_none()
     if deck is None:
         raise HTTPException(status_code=404, detail="Deck not found")
     return deck
 
 
-async def check_card(card_id: int, db: AsyncSession) -> Card:
-    card = await db.get(Card, card_id)
+async def check_card(card_id: int, db: AsyncSession, current_user: User) -> Card:
+    card = await db.execute(select(Card).where(Card.id == card_id, Card.deck.has(Deck.user_id == current_user.id)))
+    card = card.scalar_one_or_none()
     if card is None:
         raise HTTPException(status_code=404, detail="Card not found")
     return card
