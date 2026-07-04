@@ -21,7 +21,10 @@ auth = AuthX(config=config)
 
 
 @router.post('/signup')
-async def signup(credentials: UserCreate, db: AsyncSession = Depends(get_db),response:Response=None):
+async def signup(credentials: UserCreate,
+                response:Response,
+                db: AsyncSession = Depends(get_db)
+                ):
     query = select(User).where((User.username == credentials.username) | (User.email == credentials.email))
     result = await db.execute(query)
     user = result.scalar_one_or_none()
@@ -44,14 +47,15 @@ async def signup(credentials: UserCreate, db: AsyncSession = Depends(get_db),res
     return {"message": "User created successfully", "user_id": new_user.id}
 
 @router.post('/login')
-async def login(credentials: UserLogin,response:Response,db: AsyncSession = Depends(get_db)):
+async def login(credentials: UserLogin,
+                response:Response,
+                db: AsyncSession = Depends(get_db)
+                ):
     query = select(User).where(User.username == credentials.username)
     result = await db.execute(query)
     user = result.scalar_one_or_none()
-    if user == None:
-        raise HTTPException(400, detail="Username doesnt exist")
-    if not verify_password(credentials.password,user.hashed_password):
-        raise HTTPException(400, detail="Wrong password")
+    if user == None or not verify_password(credentials.password,user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
     access_token = auth.create_access_token(uid=credentials.username)
     response.set_cookie(key=config.JWT_ACCESS_COOKIE_NAME,
                         value=access_token
