@@ -22,6 +22,12 @@ class Deck(Base):
         lazy="selectin",
     )
     
+    user_id :Mapped[int] = mapped_column(
+        ForeignKey('users.id'),
+        nullable=False,
+        )
+    user: Mapped["User"] = relationship(back_populates="decks")
+    
     @property
     def card_count(self) -> int:
         return len(self.cards)
@@ -46,6 +52,10 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    decks: Mapped[list["Deck"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        )
     
     
     

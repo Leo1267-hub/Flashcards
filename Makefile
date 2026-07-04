@@ -1,33 +1,35 @@
 .PHONY: install db dev test stop reset-db revision upgrade downgrade
 
+PYTHON := .venv/bin/python
+
 install:
-	pip install -r requirements.txt
+	$(PYTHON) -m pip install -r requirements.txt
 
 db:
-	docker compose up -d
+	docker compose up -d --wait
 
 dev:
-	docker compose up -d
-	alembic upgrade head
-	uvicorn backend.main:app --reload
+	docker compose up -d --wait
+	$(PYTHON) -m alembic upgrade head
+	$(PYTHON) -m uvicorn backend.main:app --reload
 
 test:
-	docker compose up -d
-	pytest -s
+	docker compose up -d --wait
+	$(PYTHON) -m pytest -s
 
 stop:
 	docker compose down
 
 reset-db:
 	docker compose down -v
-	docker compose up -d
-	alembic upgrade head
+	docker compose up -d --wait
+	$(PYTHON) -m alembic upgrade head
 
 revision:
-	alembic revision --autogenerate -m "$(msg)"
+	$(PYTHON) -m alembic revision --autogenerate -m "$(msg)"
 
 upgrade:
-	alembic upgrade head
+	$(PYTHON) -m alembic upgrade head
 
 downgrade:
-	alembic downgrade -1
+	$(PYTHON) -m alembic downgrade -1
