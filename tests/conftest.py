@@ -46,7 +46,7 @@ def clean_test_db(migrated_test_db):
 
     with reset_engine.begin() as connection:
         connection.execute(
-            text("TRUNCATE TABLE cards, decks RESTART IDENTITY CASCADE")
+            text("TRUNCATE TABLE cards, decks, users RESTART IDENTITY CASCADE")
         )
 
     reset_engine.dispose()
