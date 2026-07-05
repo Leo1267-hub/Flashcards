@@ -66,4 +66,21 @@ async def ac(clean_test_db):
         
     app.dependency_overrides.clear()
 
+@pytest_asyncio.fixture
+async def auth_ac(ac):
+    user = {
+        "username": "testuser",
+        "email": "test@example.com",
+        "password": "password123",}
+    response = await ac.post('/signup', json=user)
+    
+    assert response.status_code == 200
+    
+    token = response.cookies.get("access_token")
+    assert token is not None
+    
+    ac.headers.update({
+        "Authorization": f"Bearer {token}"
+    })
 
+    return ac

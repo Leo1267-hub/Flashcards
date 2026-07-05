@@ -1,5 +1,5 @@
-async def create_deck(ac, name="Python", description="Python flashcards"):
-    response = await ac.post(
+async def create_deck(auth_ac, name="Python", description="Python flashcards"):
+    response = await auth_ac.post(
         "/decks",
         json={"name": name, "description": description},
     )
@@ -7,8 +7,8 @@ async def create_deck(ac, name="Python", description="Python flashcards"):
     return response.json()
 
 
-async def create_card(ac, deck_id, front="What is DNS?", back="Domain Name System"):
-    response = await ac.post(
+async def create_card(auth_ac, deck_id, front="What is DNS?", back="Domain Name System"):
+    response = await auth_ac.post(
         f"/decks/{deck_id}/cards",
         json={"front": front, "back": back},
     )

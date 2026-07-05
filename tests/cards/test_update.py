@@ -4,10 +4,10 @@ from tests.helpers import create_card, create_deck
 
 
 @pytest.mark.asyncio
-async def test_update_card_only_changes_provided_fields(ac):
-    deck = await create_deck(ac)
-    card = await create_card(ac, deck["id"])
-    response = await ac.patch(
+async def test_update_card_only_changes_provided_fields(auth_ac):
+    deck = await create_deck(auth_ac)
+    card = await create_card(auth_ac, deck["id"])
+    response = await auth_ac.patch(
         f'/cards/{card["id"]}',
         json={"back": "The Domain Name System"},
     )
@@ -17,17 +17,17 @@ async def test_update_card_only_changes_provided_fields(ac):
 
 
 @pytest.mark.asyncio
-async def test_update_missing_card_returns_404(ac):
-    response = await ac.patch("/cards/999999", json={"front": "New question"})
+async def test_update_missing_card_returns_404(auth_ac):
+    response = await auth_ac.patch("/cards/999999", json={"front": "New question"})
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Card not found"}
 
 
 @pytest.mark.asyncio
-async def test_update_card_rejects_invalid_data(ac):
-    deck = await create_deck(ac)
-    card = await create_card(ac, deck["id"])
-    response = await ac.patch(f'/cards/{card["id"]}', json={"front": ""})
+async def test_update_card_rejects_invalid_data(auth_ac):
+    deck = await create_deck(auth_ac)
+    card = await create_card(auth_ac, deck["id"])
+    response = await auth_ac.patch(f'/cards/{card["id"]}', json={"front": ""})
 
     assert response.status_code == 422
