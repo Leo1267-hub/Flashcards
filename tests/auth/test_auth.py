@@ -58,7 +58,7 @@ async def test_login_succeeds_with_correct_credentials(ac):
     )
 
     assert response.status_code == 200
-    assert response.json() == {"message": "successfully", "user_id": 1}
+    assert response.json() == {"message": "successfully", "user_id": 1, "access_token": response.cookies.get("access_token")}
     assert response.cookies.get("access_token") is not None
 
 

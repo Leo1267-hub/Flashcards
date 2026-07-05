@@ -35,7 +35,10 @@ async def signup(credentials: UserCreate,
     response.set_cookie(key=auth_config.JWT_ACCESS_COOKIE_NAME,
             value=access_token
             )
-    return {"message": "User created successfully", "user_id": new_user.id}
+    return {"message": "User created successfully",
+            "user_id": new_user.id,
+            "access_token": access_token
+            }
 
 @router.post('/login')
 async def login(credentials: UserLogin,
@@ -51,7 +54,10 @@ async def login(credentials: UserLogin,
     response.set_cookie(key=auth_config.JWT_ACCESS_COOKIE_NAME,
                         value=access_token
                         )
-    return {"message": "successfully", "user_id": user.id}
+    return {"message": "successfully",
+            "user_id": user.id,
+            "access_token": access_token
+            }
 
 @router.get("/protected", dependencies=[Depends(auth.access_token_required)])
 def protected():
