@@ -73,3 +73,4 @@ async def test_login_fails_with_wrong_password(ac):
 
     assert response.status_code == 401
     assert response.json() == {"detail": "Invalid credentials"}
+    
