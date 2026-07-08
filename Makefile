@@ -11,7 +11,13 @@ db:
 dev:
 	docker compose up -d --wait
 	$(PYTHON) -m alembic upgrade head
-	$(PYTHON) -m uvicorn backend.main:app --reload
+	@set -e; \
+	$(PYTHON) -m uvicorn backend.main:app --reload & \
+	backend_pid=$$!; \
+	npm --prefix frontend run dev & \
+	frontend_pid=$$!; \
+	trap 'kill $$backend_pid $$frontend_pid 2>/dev/null' INT TERM EXIT; \
+	wait $$backend_pid $$frontend_pid
 
 test:
 	docker compose up -d --wait
