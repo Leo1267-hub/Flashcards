@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
 import { useNavigate } from "react-router-dom";
 
@@ -18,14 +18,24 @@ function DecksPage() {
 
     const navigate = useNavigate();
 
-    async function loadDecks() {
-        try {
-            const data = await apiFetch('/decks')
-            setDecks(data)
-        } catch {
-            setMessage("You need to log in first");
+    useEffect(() => {
+        async function loadDecks() {
+            if (!isLoggedIn) {
+                setMessage("Please log in to see your decks");
+                return;
+            }
+            try {
+                const data = await apiFetch('/decks')
+                setDecks(data);
+                setMessage('');
+            } catch {
+                setMessage("Your session expired. Please log in again.");
+                setIsLoggedIn(false);
+                localStorage.removeItem("access_token");
+            }
         }
-    }
+        loadDecks();
+    }, [isLoggedIn]);
 
     async function logout() {
         try {
@@ -40,11 +50,6 @@ function DecksPage() {
     return (
         <main>
             <h1>Your Decks</h1>
-            {isLoggedIn && (
-                <button onClick={loadDecks}>
-                    Load Decks
-                </button>)
-            }
             {!isLoggedIn && (
                 <button onClick={() => navigate('/login')}>
                     Login
