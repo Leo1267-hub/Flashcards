@@ -58,6 +58,12 @@ async def login(credentials: UserLogin,
             "user_id": user.id,
             "access_token": access_token
             }
+    
+@router.post('/logout')
+async def logout(response:Response):
+    response.delete_cookie(key=auth_config.JWT_ACCESS_COOKIE_NAME)
+    return {"message": "Logged out successfully"}
+
 
 @router.get("/protected", dependencies=[Depends(auth.access_token_required)])
 def protected():
