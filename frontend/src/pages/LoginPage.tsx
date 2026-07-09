@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function LoginPage() {
-    const [username, setUsername] = useState('');
+    const [username, setUsername] = useState(localStorage.getItem('last_username') || '');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
 
@@ -18,6 +18,7 @@ function LoginPage() {
                 }),
             });
             localStorage.setItem("access_token", data.access_token);
+            localStorage.setItem('last_username', username)
             navigate('/decks')
         } catch {
             setMessage('Invalid Username or Password');
