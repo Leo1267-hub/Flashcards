@@ -10,6 +10,9 @@ type Deck = {
 };
 
 function DecksPage() {
+    const [isLoggedIn, setIsLoggedIn] = useState(
+        localStorage.getItem('access_token') !== null
+    );
     const [decks, setDecks] = useState<Deck[]>([]);
     const [message, setMessage] = useState('');
 
@@ -37,8 +40,16 @@ function DecksPage() {
     return (
         <main>
             <h1>Your Decks</h1>
-
-            <button onClick={loadDecks}>Load Decks</button>
+            {isLoggedIn && (
+                <button onClick={loadDecks}>
+                    Load Decks
+                </button>)
+            }
+            {!isLoggedIn && (
+                <button onClick={() => navigate('/login')}>
+                    Login
+                </button>)
+            }
             <button onClick={logout}>Logout</button>
 
             <p>{message}</p>
