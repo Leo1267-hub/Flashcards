@@ -2,18 +2,20 @@ import { apiFetch } from "../api";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function LoginPage() {
-    const [username, setUsername] = useState(localStorage.getItem('last_username') || '');
+
+function SignupPage() {
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
-
+    const [email, setEmail] = useState('');
     const navigate = useNavigate();
-    async function login() {
+    async function signup() {
         try {
-            const data = await apiFetch('/login', {
+            const data = await apiFetch('/signup', {
                 method: 'POST',
                 body: JSON.stringify({
                     username,
+                    email,
                     password
                 }),
             });
@@ -21,19 +23,24 @@ function LoginPage() {
             localStorage.setItem('last_username', username)
             navigate('/decks')
         } catch {
-            setMessage('Invalid Username or Password');
+            setMessage('Username or email is already used');
         }
     }
     return (
         <main>
-            <h1>Login</h1>
+            <h1>Signup</h1>
 
             <input
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 placeholder="Username"
             />
-
+            <input
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Email"
+                type="email"
+            />
             <input
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -41,11 +48,10 @@ function LoginPage() {
                 type="password"
             />
 
-            <button onClick={login}>Login</button>
+            <button onClick={signup}>Signup</button>
             <p>{message}</p>
-            <p>Dont have an account signup</p>
+            <p>Already have an account? Login</p>
         </main>
     );
 }
-
-export default LoginPage;
+export default SignupPage;

@@ -58,14 +58,19 @@ function DecksPage() {
             <button onClick={logout}>Logout</button>
 
             <p>{message}</p>
-
-            <ul>
-                {decks.map((deck) => (
-                    <li key={deck.id}>
-                        {deck.name} ({deck.card_count} cards)
-                    </li>
-                ))}
-            </ul>
+            {isLoggedIn && decks.length === 0 && (
+                <p>You have no decks</p>
+            )}
+            {
+                decks.length !== 0 &&
+                <ul>
+                    {decks.map((deck) => (
+                        <li key={deck.id}>
+                            {deck.name} ({deck.card_count} cards)
+                        </li>
+                    ))}
+                </ul>
+            }
         </main>
     );
 }
