@@ -55,8 +55,10 @@ function DecksPage() {
                     Login
                 </button>)
             }
-            <button onClick={logout}>Logout</button>
-
+            {
+                isLoggedIn &&
+                <button onClick={logout}>Logout</button>
+            }
             <p>{message}</p>
             {isLoggedIn && decks.length === 0 && (
                 <p>You have no decks</p>
