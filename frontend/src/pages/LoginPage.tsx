@@ -1,6 +1,6 @@
 import { apiFetch } from "../api";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function LoginPage() {
     const [username, setUsername] = useState(localStorage.getItem('last_username') || '');
@@ -43,7 +43,9 @@ function LoginPage() {
 
             <button onClick={login}>Login</button>
             <p>{message}</p>
-            <p>Dont have an account signup</p>
+            <p>
+                Don&apos;t have an account? <Link to="/signup">Sign up</Link>
+            </p>
         </main>
     );
 }

@@ -1,6 +1,6 @@
 import { apiFetch } from "../api";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 
 function SignupPage() {
@@ -50,7 +50,9 @@ function SignupPage() {
 
             <button onClick={signup}>Signup</button>
             <p>{message}</p>
-            <p>Already have an account? Login</p>
+            <p>
+                Already have an account? <Link to='/login' >Login</Link>
+            </p>
         </main>
     );
 }
