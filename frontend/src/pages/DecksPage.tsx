@@ -18,6 +18,8 @@ function DecksPage() {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [isCreating, setIsCreating] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const isDeckNameValid = name.trim().length > 0;
 
     const navigate = useNavigate();
 
@@ -53,8 +55,7 @@ function DecksPage() {
     async function createDeck(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
-        if (!name.trim()) {
-            setMessage('Deck name is required');
+        if (!isDeckNameValid) {
             return;
         }
 
@@ -73,47 +74,92 @@ function DecksPage() {
 
             setName('');
             setDescription('');
+            setIsModalOpen(false);
         } catch {
             setMessage('Could not create a deck');
         } finally {
             setIsCreating(false);
         }
     }
+    function closeModal() {
+        setIsModalOpen(false);
+        setName("");
+        setDescription("");
+        setMessage("");
+    }
 
     return (
         <main>
             <h1>Your Decks</h1>
             {isLoggedIn && (
-                <form onSubmit={createDeck}>
-                    <h2>Create a deck</h2>
+                <button onClick={() => setIsModalOpen(true)}>
+                    Create deck
+                </button>
+            )}
 
-                    <div>
-                        <label htmlFor="deck-name">Name</label>
-                        <input
-                            id="deck-name"
-                            type="text"
-                            value={name}
-                            onChange={(event) => setName(event.target.value)}
-                            placeholder="For example: Data Structures"
-                            maxLength={100}
-                        />
+            {isModalOpen && (
+                <div className="modal-backdrop">
+                    <div className="modal">
+                        <button
+                            type="button"
+                            className="modal-close"
+                            onClick={() => setIsModalOpen(false)}
+                            aria-label="Close"
+                        >
+                            ×
+                        </button>
+
+                        <form onSubmit={createDeck}>
+                            <h2>Create a deck</h2>
+
+                            <div>
+                                <label htmlFor="deck-name">Name</label>
+                                <input
+                                    id="deck-name"
+                                    type="text"
+                                    value={name}
+                                    onChange={(event) => setName(event.target.value)}
+                                    placeholder="For example: Data Structures"
+                                    maxLength={100}
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="deck-description">
+                                    Description
+                                </label>
+
+                                <textarea
+                                    id="deck-description"
+                                    value={description}
+                                    onChange={(event) =>
+                                        setDescription(event.target.value)
+                                    }
+                                    placeholder="What will this deck contain?"
+                                    maxLength={500}
+                                />
+                            </div>
+
+                            <div className="modal-actions">
+                                <button
+                                    type="button"
+                                    onClick={closeModal}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    disabled={isCreating || !isDeckNameValid}
+                                >
+                                    {isCreating ? "Creating..." : "Create deck"}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-
-                    <div>
-                        <label htmlFor="deck-description">Description</label>
-                        <textarea
-                            id="deck-description"
-                            value={description}
-                            onChange={(event) => setDescription(event.target.value)}
-                            placeholder="What will this deck contain?"
-                            maxLength={500}
-                        />
-                    </div>
-
-                    <button type="submit" disabled={isCreating}>
-                        {isCreating ? "Creating..." : "Create deck"}
-                    </button>
-                </form>
+                </div>
             )}
             {!isLoggedIn && (
                 <button onClick={() => navigate('/login')}>
