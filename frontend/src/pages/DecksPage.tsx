@@ -19,6 +19,8 @@ function DecksPage() {
     const [description, setDescription] = useState("");
     const [isCreating, setIsCreating] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
+    const [isUpdating, setIsUpdating] = useState(false);
     const isDeckNameValid = name.trim().length > 0;
 
     const navigate = useNavigate();
@@ -92,6 +94,37 @@ function DecksPage() {
             setIsCreating(false);
         }
     }
+
+    async function updateDeck(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        if (!editingDeck || !isDeckNameValid) {
+            return;
+        }
+
+        setIsUpdating(true);
+        setMessage('');
+
+        try {
+            const updated_deck = await apiFetch(`/decks/${editingDeck.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    name: name.trim(),
+                    description: description.trim() || null,
+                }),
+            });
+            setDecks((currentDecks) =>
+                currentDecks.map((deck) =>
+                    deck.id === updated_deck.id ? updated_deck : deck
+                ));
+            closeEditModal();
+        } catch {
+            setMessage("Could not update the deck");
+        } finally {
+            setIsUpdating(false);
+        }
+    }
+
     function closeModal() {
         setIsModalOpen(false);
         setName("");
@@ -99,13 +132,97 @@ function DecksPage() {
         setMessage("");
     }
 
+    function closeEditModal() {
+        setEditingDeck(null);
+        setName("");
+        setDescription("");
+        setMessage("");
+    }
+    function openCreateModal() {
+        setEditingDeck(null);
+        setName("");
+        setDescription("");
+        setMessage("");
+        setIsModalOpen(true);
+    }
+    function openEditModal(deck: Deck) {
+        setIsModalOpen(false);
+        setEditingDeck(deck);
+        setName(deck.name);
+        setDescription(deck.description ?? "");
+        setMessage("");
+    }
+
     return (
         <main>
             <h1>Your Decks</h1>
             {isLoggedIn && (
-                <button onClick={() => setIsModalOpen(true)}>
+                <button onClick={openCreateModal}>
                     Create deck
                 </button>
+            )}
+            {editingDeck && (
+                <div className="modal-backdrop">
+                    <div className="modal">
+                        <button
+                            type="button"
+                            className="modal-close"
+                            onClick={closeEditModal}
+                            aria-label="Close"
+                        >
+                            ×
+                        </button>
+
+                        <form onSubmit={updateDeck}>
+                            <h2>Edit deck</h2>
+
+                            <div>
+                                <label htmlFor="edit-deck-name">Name</label>
+
+                                <input
+                                    id="edit-deck-name"
+                                    type="text"
+                                    value={name}
+                                    onChange={(event) => setName(event.target.value)}
+                                    maxLength={100}
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="edit-deck-description">
+                                    Description
+                                </label>
+
+                                <textarea
+                                    id="edit-deck-description"
+                                    value={description}
+                                    onChange={(event) =>
+                                        setDescription(event.target.value)
+                                    }
+                                    maxLength={500}
+                                />
+                            </div>
+
+                            <div className="modal-actions">
+                                <button
+                                    type="button"
+                                    onClick={closeEditModal}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    disabled={isUpdating || !isDeckNameValid}
+                                >
+                                    {isUpdating ? "Saving..." : "Save changes"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
 
             {isModalOpen && (
@@ -191,6 +308,9 @@ function DecksPage() {
                     {decks.map((deck) => (
                         <li key={deck.id}>
                             {deck.name} ({deck.card_count} cards)
+                            <button onClick={() => openEditModal(deck)}>
+                                Edit
+                            </button>
                             <button onClick={() => DeleteDeck(deck.id)}>
                                 Delete
                             </button>
