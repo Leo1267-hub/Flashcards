@@ -15,6 +15,9 @@ function DecksPage() {
     );
     const [decks, setDecks] = useState<Deck[]>([]);
     const [message, setMessage] = useState('');
+    const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
+    const [isCreating, setIsCreating] = useState(false);
 
     const navigate = useNavigate();
 
@@ -47,9 +50,71 @@ function DecksPage() {
         }
     }
 
+    async function createDeck(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        if (!name.trim()) {
+            setMessage('Deck name is required');
+            return;
+        }
+
+        setIsCreating(true);
+        setMessage('');
+
+        try {
+            const newDeck = await apiFetch('/decks', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: name.trim(),
+                    description: description.trim() || null,
+                }),
+            });
+            setDecks((currentDecks) => [...currentDecks, newDeck]);
+
+            setName('');
+            setDescription('');
+        } catch {
+            setMessage('Could not create a deck');
+        } finally {
+            setIsCreating(false);
+        }
+    }
+
     return (
         <main>
             <h1>Your Decks</h1>
+            {isLoggedIn && (
+                <form onSubmit={createDeck}>
+                    <h2>Create a deck</h2>
+
+                    <div>
+                        <label htmlFor="deck-name">Name</label>
+                        <input
+                            id="deck-name"
+                            type="text"
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                            placeholder="For example: Data Structures"
+                            maxLength={100}
+                        />
+                    </div>
+
+                    <div>
+                        <label htmlFor="deck-description">Description</label>
+                        <textarea
+                            id="deck-description"
+                            value={description}
+                            onChange={(event) => setDescription(event.target.value)}
+                            placeholder="What will this deck contain?"
+                            maxLength={500}
+                        />
+                    </div>
+
+                    <button type="submit" disabled={isCreating}>
+                        {isCreating ? "Creating..." : "Create deck"}
+                    </button>
+                </form>
+            )}
             {!isLoggedIn && (
                 <button onClick={() => navigate('/login')}>
                     Login
