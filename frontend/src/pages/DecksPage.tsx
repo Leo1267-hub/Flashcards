@@ -52,6 +52,17 @@ function DecksPage() {
         }
     }
 
+    async function DeleteDeck(deck_id: number) {
+        try {
+            await apiFetch(`/decks/${deck_id}`, { method: 'DELETE' });
+            setDecks((currentDecks) =>
+                currentDecks.filter((deck) => deck.id !== deck_id)
+            );
+        } catch {
+            setMessage("Not able to delete");
+        }
+    }
+
     async function createDeck(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
@@ -180,6 +191,9 @@ function DecksPage() {
                     {decks.map((deck) => (
                         <li key={deck.id}>
                             {deck.name} ({deck.card_count} cards)
+                            <button onClick={() => DeleteDeck(deck.id)}>
+                                Delete
+                            </button>
                         </li>
                     ))}
                 </ul>
