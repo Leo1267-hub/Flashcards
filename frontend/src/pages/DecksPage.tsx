@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 type Deck = {
     id: number,
@@ -307,7 +307,12 @@ function DecksPage() {
                 <ul>
                     {decks.map((deck) => (
                         <li key={deck.id}>
-                            {deck.name} ({deck.card_count} cards)
+                            <Link to={`/decks/${deck.id}`}>
+                                {deck.name}
+                            </Link>
+                            <span>
+                                ({deck.card_count} cards)
+                            </span>
                             <button onClick={() => openEditModal(deck)}>
                                 Edit
                             </button>

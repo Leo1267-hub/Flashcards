@@ -237,6 +237,7 @@
   position: absolute;
   top: 12px;
   right: 12px;
+  color: var(--text-h);
 
   border: none;
   background: transparent;
