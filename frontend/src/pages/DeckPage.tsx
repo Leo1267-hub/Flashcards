@@ -27,6 +27,7 @@ function DeckPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingCard, setEditingCard] = useState<Card | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [deletingCardId, setDeletingCardId] = useState<number | null>(null);
     const [front, setFront] = useState('');
     const [back, setBack] = useState('');
     const isFrontValid = front.trim().length > 0;
@@ -154,6 +155,22 @@ function DeckPage() {
         setFront('');
         setBack('');
         setMessage('');
+    }
+
+    async function deleteCard(cardId: number) {
+        setDeletingCardId(cardId);
+        setMessage('');
+
+        try {
+            await apiFetch(`/cards/${cardId}`, { method: 'DELETE' });
+            setCards((currentCards) =>
+                currentCards.filter((card) => card.id !== cardId)
+            );
+        } catch {
+            setMessage('Could not delete the card');
+        } finally {
+            setDeletingCardId(null);
+        }
     }
 
     return (
@@ -296,6 +313,13 @@ function DeckPage() {
                             <p>{card.back}</p>
                             <button type="button" onClick={() => openEditModal(card)}>
                                 Edit
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => deleteCard(card.id)}
+                                disabled={deletingCardId === card.id}
+                            >
+                                {deletingCardId === card.id ? "Deleting..." : "Delete"}
                             </button>
                         </li>
                     ))}
