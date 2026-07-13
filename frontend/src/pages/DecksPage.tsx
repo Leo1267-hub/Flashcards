@@ -1,13 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../api";
-import { useNavigate, Link } from "react-router-dom";
-
-type Deck = {
-    id: number,
-    name: string,
-    description: string | null;
-    card_count: number;
-};
+import DeckFormModal from "../components/DeckFormModal";
+import DeckListItem from "../components/DeckListItem";
+import type { Deck } from "../types/deck";
 
 function DecksPage() {
     const [isLoggedIn, setIsLoggedIn] = useState(
@@ -15,32 +12,33 @@ function DecksPage() {
     );
     const [decks, setDecks] = useState<Deck[]>([]);
     const [message, setMessage] = useState('');
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
     const [isCreating, setIsCreating] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
     const isDeckNameValid = name.trim().length > 0;
-
     const navigate = useNavigate();
 
     useEffect(() => {
         async function loadDecks() {
             if (!isLoggedIn) {
-                setMessage("Please log in to see your decks");
+                setMessage('Please log in to see your decks');
                 return;
             }
+
             try {
-                const data = await apiFetch('/decks')
+                const data = await apiFetch('/decks');
                 setDecks(data);
                 setMessage('');
             } catch {
-                setMessage("Your session expired. Please log in again.");
+                setMessage('Your session expired. Please log in again.');
                 setIsLoggedIn(false);
-                localStorage.removeItem("access_token");
+                localStorage.removeItem('access_token');
             }
         }
+
         loadDecks();
     }, [isLoggedIn]);
 
@@ -54,20 +52,19 @@ function DecksPage() {
         }
     }
 
-    async function DeleteDeck(deck_id: number) {
+    async function deleteDeck(deckId: number) {
         try {
-            await apiFetch(`/decks/${deck_id}`, { method: 'DELETE' });
+            await apiFetch(`/decks/${deckId}`, { method: 'DELETE' });
             setDecks((currentDecks) =>
-                currentDecks.filter((deck) => deck.id !== deck_id)
+                currentDecks.filter((deck) => deck.id !== deckId)
             );
         } catch {
-            setMessage("Not able to delete");
+            setMessage('Not able to delete');
         }
     }
 
-    async function createDeck(event: React.FormEvent<HTMLFormElement>) {
+    async function createDeck(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-
         if (!isDeckNameValid) {
             return;
         }
@@ -84,10 +81,7 @@ function DecksPage() {
                 }),
             });
             setDecks((currentDecks) => [...currentDecks, newDeck]);
-
-            setName('');
-            setDescription('');
-            setIsModalOpen(false);
+            closeCreateModal();
         } catch {
             setMessage('Could not create a deck');
         } finally {
@@ -95,9 +89,8 @@ function DecksPage() {
         }
     }
 
-    async function updateDeck(event: React.FormEvent<HTMLFormElement>) {
+    async function updateDeck(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-
         if (!editingDeck || !isDeckNameValid) {
             return;
         }
@@ -106,7 +99,7 @@ function DecksPage() {
         setMessage('');
 
         try {
-            const updated_deck = await apiFetch(`/decks/${editingDeck.id}`, {
+            const updatedDeck = await apiFetch(`/decks/${editingDeck.id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({
                     name: name.trim(),
@@ -115,214 +108,109 @@ function DecksPage() {
             });
             setDecks((currentDecks) =>
                 currentDecks.map((deck) =>
-                    deck.id === updated_deck.id ? updated_deck : deck
-                ));
+                    deck.id === updatedDeck.id ? updatedDeck : deck
+                )
+            );
             closeEditModal();
         } catch {
-            setMessage("Could not update the deck");
+            setMessage('Could not update the deck');
         } finally {
             setIsUpdating(false);
         }
     }
 
-    function closeModal() {
-        setIsModalOpen(false);
-        setName("");
-        setDescription("");
-        setMessage("");
+    function openCreateModal() {
+        setEditingDeck(null);
+        resetForm();
+        setIsCreateModalOpen(true);
+    }
+
+    function closeCreateModal() {
+        setIsCreateModalOpen(false);
+        resetForm();
+    }
+
+    function openEditModal(deck: Deck) {
+        setIsCreateModalOpen(false);
+        setEditingDeck(deck);
+        setName(deck.name);
+        setDescription(deck.description ?? '');
+        setMessage('');
     }
 
     function closeEditModal() {
         setEditingDeck(null);
-        setName("");
-        setDescription("");
-        setMessage("");
+        resetForm();
     }
-    function openCreateModal() {
-        setEditingDeck(null);
-        setName("");
-        setDescription("");
-        setMessage("");
-        setIsModalOpen(true);
-    }
-    function openEditModal(deck: Deck) {
-        setIsModalOpen(false);
-        setEditingDeck(deck);
-        setName(deck.name);
-        setDescription(deck.description ?? "");
-        setMessage("");
+
+    function resetForm() {
+        setName('');
+        setDescription('');
+        setMessage('');
     }
 
     return (
         <main>
             <h1>Your Decks</h1>
+
             {isLoggedIn && (
-                <button onClick={openCreateModal}>
+                <button type="button" onClick={openCreateModal}>
                     Create deck
                 </button>
             )}
+
+            {isCreateModalOpen && (
+                <DeckFormModal
+                    mode="create"
+                    name={name}
+                    description={description}
+                    isSubmitting={isCreating}
+                    isValid={isDeckNameValid}
+                    message={message}
+                    onNameChange={setName}
+                    onDescriptionChange={setDescription}
+                    onSubmit={createDeck}
+                    onClose={closeCreateModal}
+                />
+            )}
+
             {editingDeck && (
-                <div className="modal-backdrop">
-                    <div className="modal">
-                        <button
-                            type="button"
-                            className="modal-close"
-                            onClick={closeEditModal}
-                            aria-label="Close"
-                        >
-                            ×
-                        </button>
-
-                        <form onSubmit={updateDeck}>
-                            <h2>Edit deck</h2>
-
-                            <div>
-                                <label htmlFor="edit-deck-name">Name</label>
-
-                                <input
-                                    id="edit-deck-name"
-                                    type="text"
-                                    value={name}
-                                    onChange={(event) => setName(event.target.value)}
-                                    maxLength={100}
-                                    required
-                                    autoFocus
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="edit-deck-description">
-                                    Description
-                                </label>
-
-                                <textarea
-                                    id="edit-deck-description"
-                                    value={description}
-                                    onChange={(event) =>
-                                        setDescription(event.target.value)
-                                    }
-                                    maxLength={500}
-                                />
-                            </div>
-
-                            <div className="modal-actions">
-                                <button
-                                    type="button"
-                                    onClick={closeEditModal}
-                                >
-                                    Cancel
-                                </button>
-
-                                <button
-                                    type="submit"
-                                    disabled={isUpdating || !isDeckNameValid}
-                                >
-                                    {isUpdating ? "Saving..." : "Save changes"}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <DeckFormModal
+                    mode="edit"
+                    name={name}
+                    description={description}
+                    isSubmitting={isUpdating}
+                    isValid={isDeckNameValid}
+                    message={message}
+                    onNameChange={setName}
+                    onDescriptionChange={setDescription}
+                    onSubmit={updateDeck}
+                    onClose={closeEditModal}
+                />
             )}
 
-            {isModalOpen && (
-                <div className="modal-backdrop">
-                    <div className="modal">
-                        <button
-                            type="button"
-                            className="modal-close"
-                            onClick={() => setIsModalOpen(false)}
-                            aria-label="Close"
-                        >
-                            ×
-                        </button>
-
-                        <form onSubmit={createDeck}>
-                            <h2>Create a deck</h2>
-
-                            <div>
-                                <label htmlFor="deck-name">Name</label>
-                                <input
-                                    id="deck-name"
-                                    type="text"
-                                    value={name}
-                                    onChange={(event) => setName(event.target.value)}
-                                    placeholder="For example: Data Structures"
-                                    maxLength={100}
-                                    required
-                                    autoFocus
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="deck-description">
-                                    Description
-                                </label>
-
-                                <textarea
-                                    id="deck-description"
-                                    value={description}
-                                    onChange={(event) =>
-                                        setDescription(event.target.value)
-                                    }
-                                    placeholder="What will this deck contain?"
-                                    maxLength={500}
-                                />
-                            </div>
-
-                            <div className="modal-actions">
-                                <button
-                                    type="button"
-                                    onClick={closeModal}
-                                >
-                                    Cancel
-                                </button>
-
-                                <button
-                                    type="submit"
-                                    disabled={isCreating || !isDeckNameValid}
-                                >
-                                    {isCreating ? "Creating..." : "Create deck"}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
             {!isLoggedIn && (
-                <button onClick={() => navigate('/login')}>
+                <button type="button" onClick={() => navigate('/login')}>
                     Login
-                </button>)
-            }
-            {
-                isLoggedIn &&
-                <button onClick={logout}>Logout</button>
-            }
-            <p>{message}</p>
-            {isLoggedIn && decks.length === 0 && (
-                <p>You have no decks</p>
+                </button>
             )}
-            {
-                decks.length !== 0 &&
+            {isLoggedIn && <button onClick={logout}>Logout</button>}
+
+            <p>{message}</p>
+
+            {isLoggedIn && decks.length === 0 && <p>You have no decks</p>}
+            {decks.length > 0 && (
                 <ul>
                     {decks.map((deck) => (
-                        <li key={deck.id}>
-                            <Link to={`/decks/${deck.id}`}>
-                                {deck.name}
-                            </Link>
-                            <span>
-                                ({deck.card_count} cards)
-                            </span>
-                            <button onClick={() => openEditModal(deck)}>
-                                Edit
-                            </button>
-                            <button onClick={() => DeleteDeck(deck.id)}>
-                                Delete
-                            </button>
-                        </li>
+                        <DeckListItem
+                            key={deck.id}
+                            deck={deck}
+                            onEdit={openEditModal}
+                            onDelete={deleteDeck}
+                        />
                     ))}
                 </ul>
-            }
+            )}
         </main>
     );
 }
