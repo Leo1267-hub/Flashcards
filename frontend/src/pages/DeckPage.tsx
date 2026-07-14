@@ -171,7 +171,11 @@ function DeckPage() {
 
             <h1>{deck.name}</h1>
             {deck.description && <p>{deck.description}</p>}
-
+            {cards.length > 0 && (
+                <Link to={`/decks/${deck.id}/study`}>
+                    Study deck
+                </Link>
+            )}
             <h2>Cards</h2>
             <button type="button" onClick={openCreateModal}>
                 Create card
