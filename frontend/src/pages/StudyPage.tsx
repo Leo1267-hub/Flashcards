@@ -7,7 +7,9 @@ function StudyPage() {
 
     const { deckId } = useParams<{ deckId: string }>();
 
-
+    const [goodCount, setGoodCount] = useState(0);
+    const [againCount, setAgainCount] = useState(0);
+    const [isFinished, setIsFinished] = useState(false);
     const [cards, setCards] = useState<Card[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isAnswerVisible, setIsAnswerVisible] = useState(false);
@@ -35,18 +37,27 @@ function StudyPage() {
     }, [deckId]
     );
 
-    function goToNextCard() {
-        if (currentIndex < cards.length - 1) {
-            setCurrentIndex((index) => index + 1);
-            setIsAnswerVisible(false);
+    function rateCard(result: "good" | "again") {
+        if (result === "good") {
+            setGoodCount((count) => count + 1);
+        } else {
+            setAgainCount((count) => count + 1);
         }
+
+        if (currentIndex === cards.length - 1) {
+            setIsFinished(true);
+            return;
+        }
+        setCurrentIndex((index) => index + 1);
+        setIsAnswerVisible(false);
     }
 
-    function goToPreviousCard() {
-        if (currentIndex > 0) {
-            setCurrentIndex((index) => index - 1);
-            setIsAnswerVisible(false);
-        }
+    function resetStudy() {
+        setCurrentIndex(0);
+        setIsAnswerVisible(false);
+        setGoodCount(0);
+        setAgainCount(0);
+        setIsFinished(false);
     }
 
     if (isLoading) {
@@ -78,6 +89,28 @@ function StudyPage() {
         );
     }
 
+    if (isFinished) {
+        return (
+            <main>
+                <h1>Study complete</h1>
+
+                <p>Remembered: {goodCount}</p>
+                <p>Need review: {againCount}</p>
+                <p>Total: {cards.length}</p>
+
+                <button
+                    type="button"
+                    onClick={resetStudy}
+                >
+                    Study again
+                </button>
+
+                <Link to={`/decks/${deckId}`}>
+                    Back to deck
+                </Link>
+            </main>
+        );
+    }
     const currentCard = cards[currentIndex];
 
     return (
@@ -99,30 +132,30 @@ function StudyPage() {
             </section>
 
             <div>
-                <button
-                    type="button"
-                    onClick={goToPreviousCard}
-                    disabled={currentIndex === 0}
-                >
-                    Previous
-                </button>
-
-                {!isAnswerVisible && (
+                {!isAnswerVisible ? (
                     <button
                         type="button"
                         onClick={() => setIsAnswerVisible(true)}
                     >
                         Show answer
                     </button>
-                )}
+                ) : (
+                    <div>
+                        <button
+                            type="button"
+                            onClick={() => rateCard("again")}
+                        >
+                            Again
+                        </button>
 
-                <button
-                    type="button"
-                    onClick={goToNextCard}
-                    disabled={currentIndex === cards.length - 1}
-                >
-                    Next
-                </button>
+                        <button
+                            type="button"
+                            onClick={() => rateCard("good")}
+                        >
+                            Good
+                        </button>
+                    </div>
+                )}
             </div>
         </main>
     );
