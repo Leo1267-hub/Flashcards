@@ -21,6 +21,7 @@ async def test_signup_creates_user(ac):
     assert response.json() == {
         "message": "User created successfully",
         "user_id": 1,
+        "access_token": response.cookies.get("access_token"),
     }
     assert response.cookies.get("access_token") is not None
 
