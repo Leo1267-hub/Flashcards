@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database import Base
+from datetime import datetime, timezone
+
+
 
 class Deck(Base):
     __tablename__ = 'decks'
@@ -42,7 +45,40 @@ class Card(Base):
                                          )
     front: Mapped[str] = mapped_column(Text, nullable=False)
     back: Mapped[str] = mapped_column(Text, nullable=False)
-    
+    fsrs_state: Mapped[int] = mapped_column(
+    Integer,
+    nullable=False,
+    default=1,
+)
+
+    fsrs_step: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        default=0,
+    )
+
+    stability: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    difficulty: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    due: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        index=True,
+    )
+
+    last_review: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+        
     deck: Mapped[Deck] = relationship(back_populates='cards')
     
 class User(Base):

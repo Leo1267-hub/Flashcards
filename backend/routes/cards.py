@@ -1,11 +1,17 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from datetime import datetime, timezone
 from backend.database import get_db
 from backend.models import Card
-from backend.schemas.cards import CardCreate, CardResponse, CardUpdate
+from backend.schemas.cards import CardCreate, CardResponse, CardUpdate,CardReview
 from backend.services.helpers import check_card, check_deck, get_current_user
+from fsrs import Rating
+from backend.services.fsrs_service import (
+    apply_fsrs_card,
+    scheduler,
+    to_fsrs_card,
+)
 
 router = APIRouter(tags=["Cards"])
 
@@ -28,7 +34,14 @@ async def create_card(
 @router.get("/decks/{deck_id}/cards", response_model=list[CardResponse])
 async def get_deck_cards(deck_id: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     await check_deck(deck_id, db, current_user)
-    query = select(Card).where(Card.deck_id == deck_id)
+    query = (
+    select(Card)
+    .where(
+        Card.deck_id == deck_id,
+        Card.due <= datetime.now(timezone.utc),
+    )
+    .order_by(Card.due)
+)
     return (await db.scalars(query)).all()
 
 
@@ -57,3 +70,27 @@ async def delete_card(card_id: int, db: AsyncSession = Depends(get_db), current_
     card = await check_card(card_id, db, current_user)
     await db.delete(card)
     await db.commit()
+    
+    
+
+@router.post("/cards/{card_id}/review", response_model=CardResponse)
+async def review_card(
+    card_id: int,
+    review: CardReview,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    card = await check_card(card_id, db, current_user)
+    fsrs_card = to_fsrs_card(card)
+
+    updated_fsrs_card, review_log = scheduler.review_card(
+        fsrs_card,
+        Rating(review.rating),
+    )
+
+    apply_fsrs_card(card, updated_fsrs_card)
+
+    await db.commit()
+    await db.refresh(card)
+
+    return card

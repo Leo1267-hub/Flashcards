@@ -7,14 +7,15 @@ function StudyPage() {
 
     const { deckId } = useParams<{ deckId: string }>();
 
-    const [goodCount, setGoodCount] = useState(0);
-    const [againCount, setAgainCount] = useState(0);
     const [isFinished, setIsFinished] = useState(false);
     const [cards, setCards] = useState<Card[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isAnswerVisible, setIsAnswerVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [message, setMessage] = useState("");
+
+
+    type Rating = 1 | 2 | 3 | 4;
 
     useEffect(() => {
         async function loadCards() {
@@ -37,27 +38,28 @@ function StudyPage() {
     }, [deckId]
     );
 
-    function rateCard(result: "good" | "again") {
-        if (result === "good") {
-            setGoodCount((count) => count + 1);
-        } else {
-            setAgainCount((count) => count + 1);
-        }
+    async function rateCard(rating: Rating) {
+        const currentCard = cards[currentIndex];
 
-        if (currentIndex === cards.length - 1) {
-            setIsFinished(true);
-            return;
+        try {
+            await apiFetch(`/cards/${currentCard.id}/review`, {
+                method: "POST",
+                body: JSON.stringify({ rating }),
+            });
+
+            moveToNextCard();
+        } catch {
+            setMessage("Could not save review");
         }
-        setCurrentIndex((index) => index + 1);
-        setIsAnswerVisible(false);
     }
 
-    function resetStudy() {
-        setCurrentIndex(0);
-        setIsAnswerVisible(false);
-        setGoodCount(0);
-        setAgainCount(0);
-        setIsFinished(false);
+    function moveToNextCard() {
+        if (currentIndex + 1 < cards.length) {
+            setCurrentIndex(currentIndex + 1);
+            setIsAnswerVisible(false);
+        } else {
+            setIsFinished(true);
+        }
     }
 
     if (isLoading) {
@@ -94,16 +96,7 @@ function StudyPage() {
             <main>
                 <h1>Study complete</h1>
 
-                <p>Remembered: {goodCount}</p>
-                <p>Need review: {againCount}</p>
                 <p>Total: {cards.length}</p>
-
-                <button
-                    type="button"
-                    onClick={resetStudy}
-                >
-                    Study again
-                </button>
 
                 <Link to={`/decks/${deckId}`}>
                     Back to deck
@@ -141,19 +134,10 @@ function StudyPage() {
                     </button>
                 ) : (
                     <div>
-                        <button
-                            type="button"
-                            onClick={() => rateCard("again")}
-                        >
-                            Again
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => rateCard("good")}
-                        >
-                            Good
-                        </button>
+                        <button onClick={() => rateCard(1)}>Again</button>
+                        <button onClick={() => rateCard(2)}>Hard</button>
+                        <button onClick={() => rateCard(3)}>Good</button>
+                        <button onClick={() => rateCard(4)}>Easy</button>
                     </div>
                 )}
             </div>

@@ -1,4 +1,17 @@
 from pydantic import BaseModel,Field,ConfigDict
+from enum import IntEnum
+
+
+class CardRating(IntEnum):
+    AGAIN = 1
+    HARD = 2
+    GOOD = 3
+    EASY = 4
+
+
+class CardReview(BaseModel):
+    rating: CardRating
+
 
 class CardCreate(BaseModel):
     front:str = Field(min_length=1,max_length=500)
