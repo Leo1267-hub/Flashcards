@@ -31,7 +31,7 @@ async def create_card(
     return db_card
 
 
-@router.get("/decks/{deck_id}/cards", response_model=list[CardResponse])
+@router.get("/decks/{deck_id}/cards/due", response_model=list[CardResponse])
 async def get_deck_cards(deck_id: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     await check_deck(deck_id, db, current_user)
     query = (
@@ -42,6 +42,22 @@ async def get_deck_cards(deck_id: int, db: AsyncSession = Depends(get_db), curre
     )
     .order_by(Card.due)
 )
+    return (await db.scalars(query)).all()
+
+@router.get("/decks/{deck_id}/cards", response_model=list[CardResponse])
+async def get_deck_cards(
+    deck_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    await check_deck(deck_id, db, current_user)
+
+    query = (
+        select(Card)
+        .where(Card.deck_id == deck_id)
+        .order_by(Card.id)
+    )
+
     return (await db.scalars(query)).all()
 
 

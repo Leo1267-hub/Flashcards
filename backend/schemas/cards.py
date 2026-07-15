@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from pydantic import BaseModel,Field,ConfigDict
 from enum import IntEnum
 
@@ -29,3 +31,10 @@ class CardResponse(BaseModel):
     deck_id:int
     front:str
     back:str
+    
+    fsrs_state: int
+    fsrs_step: int | None
+    stability: float | None
+    difficulty: float | None
+    due: datetime
+    last_review: datetime | None

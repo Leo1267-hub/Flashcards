@@ -26,7 +26,7 @@ function StudyPage() {
             }
 
             try {
-                const cardsData = await apiFetch(`/decks/${deckId}/cards`);
+                const cardsData = await apiFetch(`/decks/${deckId}/cards/due`);
                 setCards(cardsData);
             } catch {
                 setMessage("Failed to load cards");
