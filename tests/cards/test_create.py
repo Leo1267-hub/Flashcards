@@ -18,6 +18,12 @@ async def test_create_card(auth_ac):
         "deck_id": deck["id"],
         "front": "What is DNS?",
         "back": "Domain Name System",
+        "fsrs_state": 1,
+        "fsrs_step": 0,
+        "stability": None,
+        "difficulty": None,
+        "due": data["due"],
+        "last_review": None,
     }
     assert isinstance(data["id"], int)
 
