@@ -2,6 +2,7 @@ import type { Card } from "../types/card";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
+import type { ReviewOptions, Rating } from "../types/rating";
 
 function StudyPage() {
 
@@ -14,9 +15,12 @@ function StudyPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRating, setIsRating] = useState(false);
     const [message, setMessage] = useState("");
+    const [reviewOptions, setReviewOptions] =
+        useState<ReviewOptions | null>(null);
+    const [isLoadingOptions, setIsLoadingOptions] =
+        useState(false);
 
 
-    type Rating = 1 | 2 | 3 | 4;
 
     useEffect(() => {
         async function loadCards() {
@@ -38,6 +42,26 @@ function StudyPage() {
         loadCards();
     }, [deckId]
     );
+
+    async function showAnswer() {
+        const currentCard = cards[currentIndex];
+
+        setIsAnswerVisible(true);
+        setIsLoadingOptions(true);
+        setMessage("");
+
+        try {
+            const options = await apiFetch(
+                `/cards/${currentCard.id}/review-options`
+            );
+
+            setReviewOptions(options);
+        } catch {
+            setMessage("Could not calculate review intervals");
+        } finally {
+            setIsLoadingOptions(false);
+        }
+    }
 
     async function rateCard(rating: Rating) {
         if (isRating) return;
@@ -61,6 +85,7 @@ function StudyPage() {
     }
 
     function moveToNextCard() {
+        setReviewOptions(null);
         if (currentIndex + 1 < cards.length) {
             setCurrentIndex(currentIndex + 1);
             setIsAnswerVisible(false);
@@ -86,7 +111,7 @@ function StudyPage() {
 
             if (event.code === "Space" && !isAnswerVisible) {
                 event.preventDefault();
-                setIsAnswerVisible(true);
+                showAnswer();
                 return;
             }
 
@@ -101,6 +126,36 @@ function StudyPage() {
         window.addEventListener("keydown", handleRatingKey);
         return () => window.removeEventListener("keydown", handleRatingKey);
     }, [cards, currentIndex, isAnswerVisible, isFinished, isRating]);
+
+    function formatInterval(totalSeconds: number): string {
+        const minute = 60;
+        const hour = 60 * minute;
+        const day = 24 * hour;
+        const month = 30 * day;
+        const year = 365 * day;
+
+        if (totalSeconds < minute) {
+            return "<1m";
+        }
+
+        if (totalSeconds < hour) {
+            return `${Math.round(totalSeconds / minute)}m`;
+        }
+
+        if (totalSeconds < day) {
+            return `${Math.round(totalSeconds / hour)}h`;
+        }
+
+        if (totalSeconds < month) {
+            return `${Math.round(totalSeconds / day)}d`;
+        }
+
+        if (totalSeconds < year) {
+            return `${Math.round(totalSeconds / month)}mo`;
+        }
+
+        return `${Math.round(totalSeconds / year)}y`;
+    }
 
     if (isLoading) {
         return (
@@ -168,16 +223,55 @@ function StudyPage() {
                 {!isAnswerVisible ? (
                     <button
                         type="button"
-                        onClick={() => setIsAnswerVisible(true)}
+                        onClick={showAnswer}
                     >
                         Show answer (Space)
                     </button>
                 ) : (
                     <div>
-                        <button disabled={isRating} onClick={() => rateCard(1)}>Again</button>
-                        <button disabled={isRating} onClick={() => rateCard(2)}>Hard</button>
-                        <button disabled={isRating} onClick={() => rateCard(3)}>Good</button>
-                        <button disabled={isRating} onClick={() => rateCard(4)}>Easy</button>
+                        {isLoadingOptions && (
+                            <p>Calculating intervals...</p>
+                        )}
+
+                        {reviewOptions && (
+                            <div>
+                                <button
+                                    type="button"
+                                    onClick={() => rateCard(1)}
+                                >
+                                    Again ({formatInterval(
+                                        reviewOptions.again.interval_seconds
+                                    )})
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => rateCard(2)}
+                                >
+                                    Hard ({formatInterval(
+                                        reviewOptions.hard.interval_seconds
+                                    )})
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => rateCard(3)}
+                                >
+                                    Good ({formatInterval(
+                                        reviewOptions.good.interval_seconds
+                                    )})
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => rateCard(4)}
+                                >
+                                    Easy ({formatInterval(
+                                        reviewOptions.easy.interval_seconds
+                                    )})
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

@@ -38,3 +38,16 @@ class CardResponse(BaseModel):
     difficulty: float | None
     due: datetime
     last_review: datetime | None
+    
+    
+class RatingPreview(BaseModel):
+    rating: CardRating
+    due: datetime
+    interval_seconds: int
+
+
+class CardReviewOptions(BaseModel):
+    again: RatingPreview
+    hard: RatingPreview
+    good: RatingPreview
+    easy: RatingPreview

@@ -4,13 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 from backend.database import get_db
 from backend.models import Card
-from backend.schemas.cards import CardCreate, CardResponse, CardUpdate,CardReview
+from backend.schemas.cards import CardCreate, CardResponse, CardUpdate,CardReview, CardReviewOptions
 from backend.services.helpers import check_card, check_deck, get_current_user
 from fsrs import Rating
 from backend.services.fsrs_service import (
     apply_fsrs_card,
     scheduler,
     to_fsrs_card,
+    get_review_options
 )
 
 router = APIRouter(tags=["Cards"])
@@ -110,3 +111,24 @@ async def review_card(
     await db.refresh(card)
 
     return card
+
+
+@router.get(
+    "/cards/{card_id}/review-options",
+    response_model=CardReviewOptions,
+)
+async def get_card_review_options(
+    card_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    card = await check_card(card_id, db, current_user)
+
+    options = get_review_options(card)
+
+    return {
+        "again": options[Rating.Again],
+        "hard": options[Rating.Hard],
+        "good": options[Rating.Good],
+        "easy": options[Rating.Easy],
+    }
