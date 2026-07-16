@@ -12,6 +12,7 @@ function StudyPage() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isAnswerVisible, setIsAnswerVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRating, setIsRating] = useState(false);
     const [message, setMessage] = useState("");
 
 
@@ -39,8 +40,12 @@ function StudyPage() {
     );
 
     async function rateCard(rating: Rating) {
-        const currentCard = cards[currentIndex];
+        if (isRating) return;
 
+        const currentCard = cards[currentIndex];
+        if (!currentCard) return;
+
+        setIsRating(true);
         try {
             await apiFetch(`/cards/${currentCard.id}/review`, {
                 method: "POST",
@@ -50,6 +55,8 @@ function StudyPage() {
             moveToNextCard();
         } catch {
             setMessage("Could not save review");
+        } finally {
+            setIsRating(false);
         }
     }
 
@@ -61,6 +68,39 @@ function StudyPage() {
             setIsFinished(true);
         }
     }
+
+    useEffect(() => {
+        function handleRatingKey(event: KeyboardEvent) {
+            const target = event.target;
+            if (
+                event.repeat ||
+                isFinished ||
+                isRating ||
+                (target instanceof HTMLElement && target.isContentEditable) ||
+                target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement ||
+                target instanceof HTMLSelectElement
+            ) {
+                return;
+            }
+
+            if (event.code === "Space" && !isAnswerVisible) {
+                event.preventDefault();
+                setIsAnswerVisible(true);
+                return;
+            }
+
+            if (!isAnswerVisible) return;
+
+            if (["1", "2", "3", "4"].includes(event.key)) {
+                event.preventDefault();
+                void rateCard(Number(event.key) as Rating);
+            }
+        }
+
+        window.addEventListener("keydown", handleRatingKey);
+        return () => window.removeEventListener("keydown", handleRatingKey);
+    }, [cards, currentIndex, isAnswerVisible, isFinished, isRating]);
 
     if (isLoading) {
         return (
@@ -82,7 +122,7 @@ function StudyPage() {
             <main>
                 <h1>Study deck</h1>
 
-                <p>This deck has no cards yet.</p>
+                <p>This deck has no available cards to study yet.</p>
 
                 <Link to={`/decks/${deckId}`}>
                     Add cards to this deck
@@ -130,14 +170,14 @@ function StudyPage() {
                         type="button"
                         onClick={() => setIsAnswerVisible(true)}
                     >
-                        Show answer
+                        Show answer (Space)
                     </button>
                 ) : (
                     <div>
-                        <button onClick={() => rateCard(1)}>Again</button>
-                        <button onClick={() => rateCard(2)}>Hard</button>
-                        <button onClick={() => rateCard(3)}>Good</button>
-                        <button onClick={() => rateCard(4)}>Easy</button>
+                        <button disabled={isRating} onClick={() => rateCard(1)}>Again</button>
+                        <button disabled={isRating} onClick={() => rateCard(2)}>Hard</button>
+                        <button disabled={isRating} onClick={() => rateCard(3)}>Good</button>
+                        <button disabled={isRating} onClick={() => rateCard(4)}>Easy</button>
                     </div>
                 )}
             </div>
