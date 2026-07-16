@@ -9,8 +9,10 @@ function StudyPage() {
     const { deckId } = useParams<{ deckId: string }>();
 
     const [isFinished, setIsFinished] = useState(false);
-    const [cards, setCards] = useState<Card[]>([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [remainingCards, setRemainingCards] = useState<Card[]>([]);
+    const [learningQueue, setLearningQueue] =
+        useState<LearningQueueItem[]>([]);
+    const [currentCard, setCurrentCard] = useState<Card | null>(null);
     const [isAnswerVisible, setIsAnswerVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isRating, setIsRating] = useState(false);
@@ -20,7 +22,10 @@ function StudyPage() {
     const [isLoadingOptions, setIsLoadingOptions] =
         useState(false);
 
-
+    type LearningQueueItem = {
+        card: Card;
+        dueAt: number;
+    };
 
     useEffect(() => {
         async function loadCards() {
@@ -31,8 +36,20 @@ function StudyPage() {
             }
 
             try {
-                const cardsData = await apiFetch(`/decks/${deckId}/cards/due`);
-                setCards(cardsData);
+                const cardsData: Card[] = await apiFetch(
+                    `/decks/${deckId}/cards/due`
+                );
+
+                if (cardsData.length === 0) {
+                    setRemainingCards([]);
+                    setCurrentCard(null);
+                    return;
+                }
+
+                const [firstCard, ...rest] = cardsData;
+
+                setCurrentCard(firstCard);
+                setRemainingCards(rest);
             } catch {
                 setMessage("Failed to load cards");
             } finally {
@@ -44,7 +61,7 @@ function StudyPage() {
     );
 
     async function showAnswer() {
-        const currentCard = cards[currentIndex];
+        if (!currentCard) return;
 
         setIsAnswerVisible(true);
         setIsLoadingOptions(true);
@@ -172,7 +189,7 @@ function StudyPage() {
             </main>
         );
     }
-    if (cards.length === 0) {
+    if (!currentCard && remainingCards.length === 0) {
         return (
             <main>
                 <h1>Study deck</h1>
@@ -180,7 +197,7 @@ function StudyPage() {
                 <p>This deck has no available cards to study yet.</p>
 
                 <Link to={`/decks/${deckId}`}>
-                    Add cards to this deck
+                    Back to deck
                 </Link>
             </main>
         );
@@ -190,17 +207,15 @@ function StudyPage() {
         return (
             <main>
                 <h1>Study complete</h1>
-
-                <p>Total: {cards.length}</p>
-
                 <Link to={`/decks/${deckId}`}>
                     Back to deck
                 </Link>
             </main>
         );
     }
-    const currentCard = cards[currentIndex];
-
+    if (!currentCard) {
+        return null;
+    }
     return (
         <main>
             <Link to={`/decks/${deckId}`}>
@@ -208,7 +223,7 @@ function StudyPage() {
             </Link>
 
             <p>
-                Card {currentIndex + 1} of {cards.length}
+                Remaining: {remainingCards.length + 1}
             </p>
 
             <section>
