@@ -13,6 +13,13 @@ from backend.services.fsrs_service import (
     to_fsrs_card,
     get_review_options
 )
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import and_, or_, select
+
+FSRS_LEARNING = 1
+FSRS_RELEARNING = 3
+LEARN_AHEAD_MINUTES = 20
 
 router = APIRouter(tags=["Cards"])
 
@@ -132,3 +139,30 @@ async def get_card_review_options(
         "good": options[Rating.Good],
         "easy": options[Rating.Easy],
     }
+    
+@router.get('/decks/{deck_id}/study-cards', response_model=list[CardResponse],)
+async def get_study_cards(
+    deck_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    await check_deck(deck_id, db, current_user)
+
+    now = datetime.now(timezone.utc)
+    learn_ahead_time = now + timedelta(minutes=LEARN_AHEAD_MINUTES)
+
+    query = (
+        select(Card).where(
+            Card.deck_id == deck_id,
+            or_(
+                Card.due <= now,
+                and_(
+                    Card.fsrs_state.in_([FSRS_LEARNING, FSRS_RELEARNING]),
+                    Card.due <= learn_ahead_time,
+                ),
+            ),
+        ).order_by(Card.due)
+    )
+    
+
+    return (await db.scalars(query)).all()

@@ -9,9 +9,70 @@ type LearningQueueItem = {
     dueAt: number;
 };
 const FSRS_LEARNING = 1;
-const FSRS_REVIEW = 2;
 const FSRS_RELEARNING = 3;
 const LEARN_AHEAD_MS = 20 * 60 * 1000; // 20 minutes
+
+type NextCardResult = {
+    card: Card | null;
+    learningQueue: LearningQueueItem[];
+    remainingCards: Card[];
+    isFinished: boolean;
+};
+
+function getNextCard(
+    learningQueue: LearningQueueItem[],
+    remainingCards: Card[],
+    now = Date.now(),
+): NextCardResult {
+    const dueLearningIndex = learningQueue.findIndex(
+        (item) => item.dueAt <= now
+    );
+
+    if (dueLearningIndex !== -1) {
+        const nextItem = learningQueue[dueLearningIndex];
+        return {
+            card: nextItem.card,
+            learningQueue: learningQueue.filter(
+                (_, index) => index !== dueLearningIndex
+            ),
+            remainingCards,
+            isFinished: false,
+        };
+    }
+
+    if (remainingCards.length > 0) {
+        const [nextCard, ...rest] = remainingCards;
+        return {
+            card: nextCard,
+            learningQueue,
+            remainingCards: rest,
+            isFinished: false,
+        };
+    }
+
+    const learnAheadIndex = learningQueue.findIndex(
+        (item) => item.dueAt <= now + LEARN_AHEAD_MS
+    );
+
+    if (learnAheadIndex !== -1) {
+        const nextItem = learningQueue[learnAheadIndex];
+        return {
+            card: nextItem.card,
+            learningQueue: learningQueue.filter(
+                (_, index) => index !== learnAheadIndex
+            ),
+            remainingCards,
+            isFinished: false,
+        };
+    }
+
+    return {
+        card: null,
+        learningQueue,
+        remainingCards,
+        isFinished: true,
+    };
+}
 
 function StudyPage() {
 
@@ -32,7 +93,6 @@ function StudyPage() {
         useState(false);
 
 
-
     useEffect(() => {
         async function loadCards() {
             if (!deckId) {
@@ -43,7 +103,7 @@ function StudyPage() {
 
             try {
                 const cardsData: Card[] = await apiFetch(
-                    `/decks/${deckId}/cards/due`
+                    `/decks/${deckId}/study-cards`
                 );
 
                 if (cardsData.length === 0) {
@@ -52,10 +112,38 @@ function StudyPage() {
                     return;
                 }
 
-                const [firstCard, ...rest] = cardsData;
+                const now = Date.now();
 
-                setCurrentCard(firstCard);
-                setRemainingCards(rest);
+                const dueCards: Card[] = [];
+                const restoredLearningQueue: LearningQueueItem[] = [];
+
+                for (const card of cardsData) {
+                    const dueAt = new Date(card.due).getTime();
+                    if (
+                        (card.fsrs_state === FSRS_LEARNING ||
+                            card.fsrs_state === FSRS_RELEARNING) &&
+                        dueAt <= now + LEARN_AHEAD_MS
+                    ) {
+                        restoredLearningQueue.push({ card, dueAt });
+                    } else {
+                        dueCards.push(card);
+                    }
+                }
+
+                restoredLearningQueue.sort(
+                    (first, second) => first.dueAt - second.dueAt
+                );
+
+                const next = getNextCard(
+                    restoredLearningQueue,
+                    dueCards,
+                    now,
+                );
+
+                setLearningQueue(next.learningQueue);
+                setRemainingCards(next.remainingCards);
+                setCurrentCard(next.card);
+                setIsFinished(next.isFinished);
             } catch {
                 setMessage("Failed to load cards");
             } finally {
@@ -124,54 +212,12 @@ function StudyPage() {
             );
         }
 
-        const now = Date.now();
+        const next = getNextCard(updatedLearningQueue, remainingCards);
 
-        const dueLearningIndex = updatedLearningQueue.findIndex(
-            (item) => item.dueAt <= now
-        );
-
-        if (dueLearningIndex !== -1) {
-            const nextItem = updatedLearningQueue[dueLearningIndex];
-
-            const queueWithoutNextCard =
-                updatedLearningQueue.filter(
-                    (_, index) => index !== dueLearningIndex
-                );
-
-            setLearningQueue(queueWithoutNextCard);
-            setCurrentCard(nextItem.card);
-            return;
-        }
-
-        if (remainingCards.length > 0) {
-            const [nextCard, ...rest] = remainingCards;
-
-            setLearningQueue(updatedLearningQueue);
-            setRemainingCards(rest);
-            setCurrentCard(nextCard);
-            return;
-        }
-
-        const learnAheadIndex = updatedLearningQueue.findIndex(
-            (item) => item.dueAt <= now + LEARN_AHEAD_MS
-        );
-
-        if (learnAheadIndex !== -1) {
-            const nextItem = updatedLearningQueue[learnAheadIndex];
-
-            const queueWithoutNextCard =
-                updatedLearningQueue.filter(
-                    (_, index) => index !== learnAheadIndex
-                );
-
-            setLearningQueue(queueWithoutNextCard);
-            setCurrentCard(nextItem.card);
-            return;
-        }
-
-        setLearningQueue(updatedLearningQueue);
-        setCurrentCard(null);
-        setIsFinished(true);
+        setLearningQueue(next.learningQueue);
+        setRemainingCards(next.remainingCards);
+        setCurrentCard(next.card);
+        setIsFinished(next.isFinished);
     }
 
     useEffect(() => {
