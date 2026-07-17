@@ -4,6 +4,15 @@ import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
 import type { ReviewOptions, Rating } from "../types/rating";
 
+type LearningQueueItem = {
+    card: Card;
+    dueAt: number;
+};
+const FSRS_LEARNING = 1;
+const FSRS_REVIEW = 2;
+const FSRS_RELEARNING = 3;
+const LEARN_AHEAD_MS = 20 * 60 * 1000; // 20 minutes
+
 function StudyPage() {
 
     const { deckId } = useParams<{ deckId: string }>();
@@ -22,10 +31,7 @@ function StudyPage() {
     const [isLoadingOptions, setIsLoadingOptions] =
         useState(false);
 
-    type LearningQueueItem = {
-        card: Card;
-        dueAt: number;
-    };
+
 
     useEffect(() => {
         async function loadCards() {
@@ -81,19 +87,15 @@ function StudyPage() {
     }
 
     async function rateCard(rating: Rating) {
-        if (isRating) return;
-
-        const currentCard = cards[currentIndex];
-        if (!currentCard) return;
+        if (isRating || !currentCard) return;
 
         setIsRating(true);
         try {
-            await apiFetch(`/cards/${currentCard.id}/review`, {
+            const reviewCard: Card = await apiFetch(`/cards/${currentCard.id}/review`, {
                 method: "POST",
                 body: JSON.stringify({ rating }),
             });
-
-            moveToNextCard();
+            moveAfterReview(reviewCard);
         } catch {
             setMessage("Could not save review");
         } finally {
@@ -101,14 +103,75 @@ function StudyPage() {
         }
     }
 
-    function moveToNextCard() {
+    function moveAfterReview(reviewedCard: Card) {
         setReviewOptions(null);
-        if (currentIndex + 1 < cards.length) {
-            setCurrentIndex(currentIndex + 1);
-            setIsAnswerVisible(false);
-        } else {
-            setIsFinished(true);
+        setIsAnswerVisible(false);
+
+        let updatedLearningQueue = [...learningQueue];
+
+        const shouldEnterLearningQueue =
+            reviewedCard.fsrs_state === FSRS_LEARNING ||
+            reviewedCard.fsrs_state === FSRS_RELEARNING;
+
+        if (shouldEnterLearningQueue) {
+            updatedLearningQueue.push({
+                card: reviewedCard,
+                dueAt: new Date(reviewedCard.due).getTime(),
+            });
+
+            updatedLearningQueue.sort(
+                (first, second) => first.dueAt - second.dueAt
+            );
         }
+
+        const now = Date.now();
+
+        const dueLearningIndex = updatedLearningQueue.findIndex(
+            (item) => item.dueAt <= now
+        );
+
+        if (dueLearningIndex !== -1) {
+            const nextItem = updatedLearningQueue[dueLearningIndex];
+
+            const queueWithoutNextCard =
+                updatedLearningQueue.filter(
+                    (_, index) => index !== dueLearningIndex
+                );
+
+            setLearningQueue(queueWithoutNextCard);
+            setCurrentCard(nextItem.card);
+            return;
+        }
+
+        if (remainingCards.length > 0) {
+            const [nextCard, ...rest] = remainingCards;
+
+            setLearningQueue(updatedLearningQueue);
+            setRemainingCards(rest);
+            setCurrentCard(nextCard);
+            return;
+        }
+
+        const learnAheadIndex = updatedLearningQueue.findIndex(
+            (item) => item.dueAt <= now + LEARN_AHEAD_MS
+        );
+
+        if (learnAheadIndex !== -1) {
+            const nextItem = updatedLearningQueue[learnAheadIndex];
+
+            const queueWithoutNextCard =
+                updatedLearningQueue.filter(
+                    (_, index) => index !== learnAheadIndex
+                );
+
+            setLearningQueue(queueWithoutNextCard);
+            setCurrentCard(nextItem.card);
+            return;
+        }
+
+        setLearningQueue(updatedLearningQueue);
+        setCurrentCard(null);
+        setIsFinished(true);
     }
 
     useEffect(() => {
@@ -142,7 +205,13 @@ function StudyPage() {
 
         window.addEventListener("keydown", handleRatingKey);
         return () => window.removeEventListener("keydown", handleRatingKey);
-    }, [cards, currentIndex, isAnswerVisible, isFinished, isRating]);
+    }, [
+        currentCard,
+        isAnswerVisible,
+        isFinished,
+        isRating,
+        reviewOptions,
+    ]);
 
     function formatInterval(totalSeconds: number): string {
         const minute = 60;
@@ -223,7 +292,11 @@ function StudyPage() {
             </Link>
 
             <p>
-                Remaining: {remainingCards.length + 1}
+                Remaining: {
+                    remainingCards.length +
+                    learningQueue.length +
+                    1
+                }
             </p>
 
             <section>
