@@ -19,14 +19,33 @@ type NextCardResult = {
     isFinished: boolean;
 };
 
+function findLearningCardIndex(
+    queue: LearningQueueItem[],
+    latestAllowedTime: number,
+    previousCardId: number | null,
+): number {
+    const differentCardIndex = queue.findIndex(
+        (item) =>
+            item.dueAt <= latestAllowedTime &&
+            item.card.id !== previousCardId
+    );
+
+    if (differentCardIndex !== -1) {
+        return differentCardIndex;
+    }
+
+    return queue.findIndex(
+        (item) => item.dueAt <= latestAllowedTime
+    );
+}
+
 function getNextCard(
     learningQueue: LearningQueueItem[],
     remainingCards: Card[],
     now = Date.now(),
+    prevCardID: number | null = null,
 ): NextCardResult {
-    const dueLearningIndex = learningQueue.findIndex(
-        (item) => item.dueAt <= now
-    );
+    const dueLearningIndex = findLearningCardIndex(learningQueue, now, prevCardID);
 
     if (dueLearningIndex !== -1) {
         const nextItem = learningQueue[dueLearningIndex];
@@ -50,9 +69,7 @@ function getNextCard(
         };
     }
 
-    const learnAheadIndex = learningQueue.findIndex(
-        (item) => item.dueAt <= now + LEARN_AHEAD_MS
-    );
+    const learnAheadIndex = findLearningCardIndex(learningQueue, now + LEARN_AHEAD_MS, prevCardID);
 
     if (learnAheadIndex !== -1) {
         const nextItem = learningQueue[learnAheadIndex];
@@ -212,7 +229,7 @@ function StudyPage() {
             );
         }
 
-        const next = getNextCard(updatedLearningQueue, remainingCards);
+        const next = getNextCard(updatedLearningQueue, remainingCards, reviewedCard.id);
 
         setLearningQueue(next.learningQueue);
         setRemainingCards(next.remainingCards);
