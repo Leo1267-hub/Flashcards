@@ -42,10 +42,10 @@ function findLearningCardIndex(
 function getNextCard(
     learningQueue: LearningQueueItem[],
     remainingCards: Card[],
+    previousCardId: number | null = null,
     now = Date.now(),
-    prevCardID: number | null = null,
 ): NextCardResult {
-    const dueLearningIndex = findLearningCardIndex(learningQueue, now, prevCardID);
+    const dueLearningIndex = findLearningCardIndex(learningQueue, now, previousCardId);
 
     if (dueLearningIndex !== -1) {
         const nextItem = learningQueue[dueLearningIndex];
@@ -69,7 +69,7 @@ function getNextCard(
         };
     }
 
-    const learnAheadIndex = findLearningCardIndex(learningQueue, now + LEARN_AHEAD_MS, prevCardID);
+    const learnAheadIndex = findLearningCardIndex(learningQueue, now + LEARN_AHEAD_MS, previousCardId);
 
     if (learnAheadIndex !== -1) {
         const nextItem = learningQueue[learnAheadIndex];
@@ -154,6 +154,7 @@ function StudyPage() {
                 const next = getNextCard(
                     restoredLearningQueue,
                     dueCards,
+                    null,
                     now,
                 );
 
@@ -321,12 +322,10 @@ function StudyPage() {
             </main>
         );
     }
-    if (!currentCard && remainingCards.length === 0) {
+    if (isFinished) {
         return (
             <main>
-                <h1>Study deck</h1>
-
-                <p>This deck has no available cards to study yet.</p>
+                <h1>Study complete</h1>
 
                 <Link to={`/decks/${deckId}`}>
                     Back to deck
@@ -335,10 +334,17 @@ function StudyPage() {
         );
     }
 
-    if (isFinished) {
+    if (
+        !currentCard &&
+        remainingCards.length === 0 &&
+        learningQueue.length === 0
+    ) {
         return (
             <main>
-                <h1>Study complete</h1>
+                <h1>Study deck</h1>
+
+                <p>This deck has no available cards to study yet.</p>
+
                 <Link to={`/decks/${deckId}`}>
                     Back to deck
                 </Link>
