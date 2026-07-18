@@ -16,3 +16,4 @@ class DeckResponse(BaseModel):
     name:str
     description:str | None = None
     card_count:int
+    due_count:int

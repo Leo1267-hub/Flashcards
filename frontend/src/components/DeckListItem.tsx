@@ -10,8 +10,16 @@ type DeckListItemProps = {
 function DeckListItem({ deck, onEdit, onDelete }: DeckListItemProps) {
     return (
         <li>
-            <Link to={`/decks/${deck.id}`}>{deck.name}</Link>
-            <span>({deck.card_count} cards)</span>
+            <Link to={`/decks/${deck.id}`}>
+                {deck.name}
+            </Link>
+
+            <span>
+                {deck.card_count} cards
+            </span>
+            <strong>
+                {deck.due_count} due
+            </strong>
             <button type="button" onClick={() => onEdit(deck)}>
                 Edit
             </button>

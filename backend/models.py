@@ -34,6 +34,16 @@ class Deck(Base):
     @property
     def card_count(self) -> int:
         return len(self.cards)
+    
+    @property
+    def due_count(self) -> int:
+        now = datetime.now(timezone.utc)
+
+        return sum(
+            1
+            for card in self.cards
+            if card.due <= now
+        )
         
 
 class Card(Base):
