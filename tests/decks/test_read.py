@@ -19,7 +19,7 @@ async def test_get_decks_returns_decks_and_honors_limit(auth_ac):
     response = await auth_ac.get("/decks", params={"limit": 1})
 
     assert response.status_code == 200
-    assert response.json() == [first]
+    assert response.json() == [{**first, "card_count": 0, "due_count": 0}]
 
 
 @pytest.mark.asyncio
@@ -32,14 +32,14 @@ async def test_get_decks_rejects_invalid_limit(auth_ac, limit):
 
 
 @pytest.mark.asyncio
-async def test_get_one_deck_includes_card_count(auth_ac):
+async def test_get_one_deck_includes_card_and_due_counts(auth_ac):
     deck = await create_deck(auth_ac)
     await create_card(auth_ac, deck["id"])
 
     response = await auth_ac.get(f'/decks/{deck["id"]}')
 
     assert response.status_code == 200
-    assert response.json() == {**deck, "card_count": 1}
+    assert response.json() == {**deck, "card_count": 1, "due_count": 1}
 
 
 @pytest.mark.asyncio

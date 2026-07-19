@@ -10,10 +10,12 @@ class DeckUpdate(BaseModel):
     
     
 class DeckResponse(BaseModel):
-    # from_attributes = True, allows pydantic to read data from ORM models and convert them into pydantic models JSON format
     model_config = ConfigDict(from_attributes=True)
-    id:int 
-    name:str
-    description:str | None = None
-    card_count:int
-    due_count:int
+
+    id: int
+    name: str
+    description: str | None = None
+    
+class DeckSummaryResponse(DeckResponse):
+    card_count: int
+    due_count: int

@@ -14,7 +14,6 @@ async def test_create_deck(auth_ac):
         "id": data["id"],
         "name": "Python",
         "description": "Python flashcards",
-        "card_count": 0,
     }
     assert isinstance(data["id"], int)
 

@@ -6,29 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database import get_db
 from backend.models import Card, Deck
-from backend.schemas.decks import DeckCreate, DeckResponse, DeckUpdate
+from backend.schemas.decks import DeckCreate, DeckResponse, DeckUpdate,DeckSummaryResponse
 from backend.services.helpers import check_deck, get_current_user
 
 router = APIRouter(prefix="/decks", tags=["Decks"])
 
-
-@router.get("", response_model=list[DeckResponse])
-async def get_decks(
-    limit: int | None = Query(default=None, gt=0, le=100),
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    query = select(Deck).where(Deck.user_id == current_user.id)
-    if limit is not None:
-        query = query.limit(limit)
-    return (await db.scalars(query)).all()
-
-
-@router.get("/{deck_id}", response_model=DeckResponse)
+@router.get("/{deck_id}", response_model=DeckSummaryResponse)
 async def get_one_deck(deck_id: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     return await check_deck(deck_id, db, current_user)
 
-@router.get("", response_model=list[DeckResponse])
+@router.get("", response_model=list[DeckSummaryResponse])
 async def get_decks(
     limit: int | None = Query(default=None, gt=0, le=100),
     db: AsyncSession = Depends(get_db),

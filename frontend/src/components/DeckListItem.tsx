@@ -7,25 +7,43 @@ type DeckListItemProps = {
     onDelete: (deckId: number) => void;
 };
 
-function DeckListItem({ deck, onEdit, onDelete }: DeckListItemProps) {
+function DeckListItem({
+    deck,
+    onEdit,
+    onDelete,
+}: DeckListItemProps) {
     return (
-        <li>
-            <Link to={`/decks/${deck.id}`}>
-                {deck.name}
-            </Link>
+        <li className="deck-list-item">
+            <div className="deck-list-item__info">
+                <Link to={`/decks/${deck.id}`}>
+                    {deck.name}
+                </Link>
 
-            <span>
-                {deck.card_count} cards
-            </span>
-            <strong>
-                {deck.due_count} due
-            </strong>
-            <button type="button" onClick={() => onEdit(deck)}>
-                Edit
-            </button>
-            <button type="button" onClick={() => onDelete(deck.id)}>
-                Delete
-            </button>
+                <span>
+                    {deck.card_count} cards
+                </span>
+
+                <strong>
+                    {deck.due_count} due
+                </strong>
+
+            </div>
+
+            <div className="deck-list-item__actions">
+                <button
+                    type="button"
+                    onClick={() => onEdit(deck)}
+                >
+                    Edit
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => onDelete(deck.id)}
+                >
+                    Delete
+                </button>
+            </div>
         </li>
     );
 }
