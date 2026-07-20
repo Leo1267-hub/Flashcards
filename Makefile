@@ -22,6 +22,7 @@ dev:
 test:
 	docker compose up -d --wait
 	$(PYTHON) -m pytest -s tests
+	npm --prefix frontend test
 
 stop:
 	docker compose down
