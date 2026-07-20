@@ -21,7 +21,7 @@ dev:
 
 test:
 	docker compose up -d --wait
-	$(PYTHON) -m pytest -s
+	$(PYTHON) -m pytest -s tests
 
 stop:
 	docker compose down
