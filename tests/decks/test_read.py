@@ -1,5 +1,10 @@
-import pytest
+from datetime import datetime, timedelta, timezone
 
+import pytest
+from sqlalchemy import update
+
+from backend.models import Card
+from tests.conftest import TestSessionLocal
 from tests.helpers import create_card, create_deck
 
 
@@ -20,6 +25,46 @@ async def test_get_decks_returns_decks_and_honors_limit(auth_ac):
 
     assert response.status_code == 200
     assert response.json() == [{**first, "card_count": 0, "due_count": 0}]
+
+
+@pytest.mark.asyncio
+async def test_get_decks_returns_card_and_due_counts(auth_ac):
+    deck = await create_deck(auth_ac)
+    cards = [
+        await create_card(auth_ac, deck["id"], front="Card A"),
+        await create_card(auth_ac, deck["id"], front="Card B"),
+        await create_card(auth_ac, deck["id"], front="Card C"),
+    ]
+    now = datetime.now(timezone.utc)
+
+    due_dates = {
+        cards[0]["id"]: now - timedelta(days=1),
+        cards[1]["id"]: now,
+        cards[2]["id"]: now + timedelta(days=1),
+    }
+    async with TestSessionLocal() as db:
+        for card_id, due in due_dates.items():
+            await db.execute(
+                update(Card).where(Card.id == card_id).values(due=due)
+            )
+        await db.commit()
+
+    response = await auth_ac.get("/decks")
+
+    assert response.status_code == 200
+    assert response.json()[0]["card_count"] == 3
+    assert response.json()[0]["due_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_get_decks_returns_zero_counts_for_empty_deck(auth_ac):
+    await create_deck(auth_ac)
+
+    response = await auth_ac.get("/decks")
+
+    assert response.status_code == 200
+    assert response.json()[0]["card_count"] == 0
+    assert response.json()[0]["due_count"] == 0
 
 
 @pytest.mark.asyncio
