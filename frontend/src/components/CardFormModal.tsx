@@ -31,13 +31,16 @@ function CardFormModal({
 
     return (
         <Modal onClose={onClose}>
-            <form onSubmit={onSubmit}>
-                <h2>{isCreating ? "Create a card" : "Edit card"}</h2>
+            <form onSubmit={onSubmit} className="flex flex-col gap-5">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                    {isCreating ? "Create a card" : "Edit card"}
+                </h2>
 
-                <div>
-                    <label htmlFor={`${fieldPrefix}-front`}>Front</label>
+                <div className="flex flex-col gap-1.5">
+                    <label htmlFor={`${fieldPrefix}-front`} className="field-label">Front</label>
                     <textarea
                         id={`${fieldPrefix}-front`}
+                        className="field-input min-h-24 resize-y"
                         value={front}
                         onChange={(event) => onFrontChange(event.target.value)}
                         placeholder={isCreating ? "Question or prompt" : undefined}
@@ -47,10 +50,11 @@ function CardFormModal({
                     />
                 </div>
 
-                <div>
-                    <label htmlFor={`${fieldPrefix}-back`}>Back</label>
+                <div className="flex flex-col gap-1.5">
+                    <label htmlFor={`${fieldPrefix}-back`} className="field-label">Back</label>
                     <textarea
                         id={`${fieldPrefix}-back`}
+                        className="field-input min-h-24 resize-y"
                         value={back}
                         onChange={(event) => onBackChange(event.target.value)}
                         placeholder={isCreating ? "Answer" : undefined}
@@ -59,15 +63,19 @@ function CardFormModal({
                     />
                 </div>
 
-                {message && <p role="alert">{message}</p>}
+                {message && (
+                    <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+                        {message}
+                    </p>
+                )}
 
-                <div className="modal-actions">
-                    <button type="button" onClick={onClose}>
+                <div className="flex justify-end gap-3">
+                    <button type="button" className="btn-secondary" onClick={onClose}>
                         Cancel
                     </button>
-                    <button type="submit" disabled={isSubmitting || !isValid}>
+                    <button type="submit" className="btn-primary" disabled={isSubmitting || !isValid}>
                         {isSubmitting
-                            ? isCreating ? "Creating..." : "Saving..."
+                            ? isCreating ? "Creating…" : "Saving…"
                             : isCreating ? "Create card" : "Save changes"}
                     </button>
                 </div>

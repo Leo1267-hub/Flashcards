@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
 import type { ReviewOptions, Rating } from "../types/rating";
 import { getNextCard, type LearningQueueItem } from "./studyQueue";
+import Navbar from "../components/Navbar";
 
 const FSRS_LEARNING = 1;
 const FSRS_RELEARNING = 3;
@@ -26,6 +27,7 @@ function StudyPage() {
         useState<ReviewOptions | null>(null);
     const [isLoadingOptions, setIsLoadingOptions] =
         useState(false);
+    const [totalToStudy, setTotalToStudy] = useState(0);
 
 
     useEffect(() => {
@@ -40,6 +42,8 @@ function StudyPage() {
                 const cardsData: Card[] = await apiFetch(
                     `/decks/${deckId}/study-cards`
                 );
+
+                setTotalToStudy(cardsData.length);
 
                 if (cardsData.length === 0) {
                     setRemainingCards([]);
@@ -227,28 +231,44 @@ function StudyPage() {
 
     if (isLoading) {
         return (
-            <main>
-                <p>Loading Cards...</p>
-            </main>
+            <div className="min-h-svh">
+                <Navbar />
+                <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-24 sm:px-6">
+                    <div className="h-72 w-full animate-pulse rounded-3xl bg-slate-100 dark:bg-slate-800/60" />
+                </main>
+            </div>
         );
     }
     if (message) {
         return (
-            <main>
-                <p>{message}</p>
-                <Link to="/decks">Back to Decks</Link>
-            </main>
+            <div className="min-h-svh">
+                <Navbar />
+                <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-20 text-center sm:px-6">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{message}</p>
+                    <Link to="/decks" className="btn-secondary mt-5">Back to decks</Link>
+                </main>
+            </div>
         );
     }
     if (isFinished) {
         return (
-            <main>
-                <h1>Study complete</h1>
-
-                <Link to={`/decks/${deckId}`}>
-                    Back to deck
-                </Link>
-            </main>
+            <div className="min-h-svh">
+                <Navbar />
+                <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-20 text-center sm:px-6">
+                    <div className="grid h-16 w-16 place-items-center rounded-2xl bg-emerald-50 text-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-400">
+                        <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                    </div>
+                    <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Study complete</h1>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                        You reviewed every due card in this deck. Great job!
+                    </p>
+                    <Link to={`/decks/${deckId}`} className="btn-primary mt-6">
+                        Back to deck
+                    </Link>
+                </main>
+            </div>
         );
     }
 
@@ -258,99 +278,135 @@ function StudyPage() {
         learningQueue.length === 0
     ) {
         return (
-            <main>
-                <h1>Study deck</h1>
-
-                <p>This deck has no available cards to study yet.</p>
-
-                <Link to={`/decks/${deckId}`}>
-                    Back to deck
-                </Link>
-            </main>
+            <div className="min-h-svh">
+                <Navbar />
+                <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-20 text-center sm:px-6">
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Nothing to study</h1>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                        This deck has no available cards to study yet.
+                    </p>
+                    <Link to={`/decks/${deckId}`} className="btn-secondary mt-6">
+                        Back to deck
+                    </Link>
+                </main>
+            </div>
         );
     }
     if (!currentCard) {
         return null;
     }
+
+    const remaining = remainingCards.length + learningQueue.length + 1;
+    const reviewed = Math.max(0, totalToStudy - remaining);
+    const progress = totalToStudy > 0 ? (reviewed / totalToStudy) * 100 : 0;
+
+    const ratingButtons: {
+        rating: Rating;
+        label: string;
+        seconds: number;
+        classes: string;
+    }[] = reviewOptions
+        ? [
+            { rating: 1, label: "Again", seconds: reviewOptions.again.interval_seconds, classes: "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/60" },
+            { rating: 2, label: "Hard", seconds: reviewOptions.hard.interval_seconds, classes: "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-950/60" },
+            { rating: 3, label: "Good", seconds: reviewOptions.good.interval_seconds, classes: "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60" },
+            { rating: 4, label: "Easy", seconds: reviewOptions.easy.interval_seconds, classes: "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300 dark:hover:bg-sky-950/60" },
+        ]
+        : [];
+
     return (
-        <main>
-            <Link to={`/decks/${deckId}`}>
-                ← Back to deck
-            </Link>
-
-            <p>
-                Remaining: {
-                    remainingCards.length +
-                    learningQueue.length +
-                    1
-                }
-            </p>
-
-            <section>
-                <h2>{currentCard.front}</h2>
-
-                {isAnswerVisible && (
-                    <p>{currentCard.back}</p>
-                )}
-            </section>
-
-            <div>
-                {!isAnswerVisible ? (
-                    <button
-                        type="button"
-                        onClick={showAnswer}
+        <div className="min-h-svh">
+            <Navbar
+                right={
+                    <Link
+                        to={`/decks/${deckId}`}
+                        className="btn-ghost"
                     >
-                        Show answer (Space)
-                    </button>
-                ) : (
-                    <div>
-                        {isLoadingOptions && (
-                            <p>Calculating intervals...</p>
-                        )}
+                        Exit
+                    </Link>
+                }
+            />
 
-                        {reviewOptions && (
-                            <div>
-                                <button
-                                    type="button"
-                                    onClick={() => rateCard(1)}
-                                >
-                                    Again ({formatInterval(
-                                        reviewOptions.again.interval_seconds
-                                    )})
-                                </button>
+            <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10">
+                <div className="flex items-center justify-between text-sm font-medium text-slate-500 dark:text-slate-400">
+                    <span>Progress</span>
+                    <span>{remaining} left</span>
+                </div>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                    <div
+                        className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-700 transition-all duration-500"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
 
-                                <button
-                                    type="button"
-                                    onClick={() => rateCard(2)}
-                                >
-                                    Hard ({formatInterval(
-                                        reviewOptions.hard.interval_seconds
-                                    )})
-                                </button>
+                <div className="flip-scene mt-8">
+                    <div className={`flip-card ${isAnswerVisible ? "is-flipped" : ""}`}>
+                        <div className="flip-face card-surface flex min-h-72 flex-col items-center justify-center gap-4 px-6 py-12 text-center sm:px-10">
+                            <span className="text-xs font-semibold uppercase tracking-widest text-brand-500 dark:text-brand-400">
+                                Question
+                            </span>
+                            <p className="text-2xl font-semibold leading-snug text-slate-900 dark:text-slate-100 sm:text-3xl">
+                                {currentCard.front}
+                            </p>
+                        </div>
 
-                                <button
-                                    type="button"
-                                    onClick={() => rateCard(3)}
-                                >
-                                    Good ({formatInterval(
-                                        reviewOptions.good.interval_seconds
-                                    )})
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => rateCard(4)}
-                                >
-                                    Easy ({formatInterval(
-                                        reviewOptions.easy.interval_seconds
-                                    )})
-                                </button>
-                            </div>
-                        )}
+                        <div className="flip-face flip-face--back card-surface flex min-h-72 flex-col items-center justify-center gap-4 bg-gradient-to-br from-white to-brand-50 dark:from-slate-900 dark:to-slate-800 px-6 py-12 text-center sm:px-10">
+                            <span className="text-xs font-semibold uppercase tracking-widest text-brand-500 dark:text-brand-400">
+                                Answer
+                            </span>
+                            <p className="text-2xl font-semibold leading-snug text-slate-900 dark:text-slate-100 sm:text-3xl">
+                                {currentCard.back}
+                            </p>
+                        </div>
                     </div>
-                )}
-            </div>
-        </main>
+                </div>
+
+                <div className="mt-8">
+                    {!isAnswerVisible ? (
+                        <button
+                            type="button"
+                            className="btn-primary mx-auto flex w-full max-w-xs"
+                            onClick={showAnswer}
+                        >
+                            Show answer
+                            <kbd className="ml-1 rounded bg-white/20 px-1.5 py-0.5 text-xs font-semibold">
+                                Space
+                            </kbd>
+                        </button>
+                    ) : (
+                        <div>
+                            {isLoadingOptions && (
+                                <p className="text-center text-sm text-slate-400 dark:text-slate-500">Calculating intervals…</p>
+                            )}
+
+                            {reviewOptions && (
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                    {ratingButtons.map((option, index) => (
+                                        <button
+                                            key={option.rating}
+                                            type="button"
+                                            onClick={() => rateCard(option.rating)}
+                                            disabled={isRating}
+                                            className={`flex flex-col items-center gap-1 rounded-xl border px-3 py-3 text-sm font-semibold transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 ${option.classes}`}
+                                        >
+                                            <span className="flex items-center gap-1.5">
+                                                <kbd className="rounded bg-white/70 px-1.5 py-0.5 text-xs dark:bg-black/35 dark:text-inherit">
+                                                    {index + 1}
+                                                </kbd>
+                                                {option.label}
+                                            </span>
+                                            <span className="text-xs font-medium opacity-80">
+                                                {formatInterval(option.seconds)}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </main>
+        </div>
     );
 }
 

@@ -31,13 +31,16 @@ function DeckFormModal({
 
     return (
         <Modal onClose={onClose}>
-            <form onSubmit={onSubmit}>
-                <h2>{isCreating ? "Create a deck" : "Edit deck"}</h2>
+            <form onSubmit={onSubmit} className="flex flex-col gap-5">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                    {isCreating ? "Create a deck" : "Edit deck"}
+                </h2>
 
-                <div>
-                    <label htmlFor={`${fieldPrefix}-name`}>Name</label>
+                <div className="flex flex-col gap-1.5">
+                    <label htmlFor={`${fieldPrefix}-name`} className="field-label">Name</label>
                     <input
                         id={`${fieldPrefix}-name`}
+                        className="field-input"
                         type="text"
                         value={name}
                         onChange={(event) => onNameChange(event.target.value)}
@@ -48,10 +51,11 @@ function DeckFormModal({
                     />
                 </div>
 
-                <div>
-                    <label htmlFor={`${fieldPrefix}-description`}>Description</label>
+                <div className="flex flex-col gap-1.5">
+                    <label htmlFor={`${fieldPrefix}-description`} className="field-label">Description</label>
                     <textarea
                         id={`${fieldPrefix}-description`}
+                        className="field-input min-h-24 resize-y"
                         value={description}
                         onChange={(event) => onDescriptionChange(event.target.value)}
                         placeholder={isCreating ? "What will this deck contain?" : undefined}
@@ -59,15 +63,19 @@ function DeckFormModal({
                     />
                 </div>
 
-                {message && <p role="alert">{message}</p>}
+                {message && (
+                    <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+                        {message}
+                    </p>
+                )}
 
-                <div className="modal-actions">
-                    <button type="button" onClick={onClose}>
+                <div className="flex justify-end gap-3">
+                    <button type="button" className="btn-secondary" onClick={onClose}>
                         Cancel
                     </button>
-                    <button type="submit" disabled={isSubmitting || !isValid}>
+                    <button type="submit" className="btn-primary" disabled={isSubmitting || !isValid}>
                         {isSubmitting
-                            ? isCreating ? "Creating..." : "Saving..."
+                            ? isCreating ? "Creating…" : "Saving…"
                             : isCreating ? "Create deck" : "Save changes"}
                     </button>
                 </div>
