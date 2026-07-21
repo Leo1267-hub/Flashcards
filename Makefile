@@ -1,6 +1,14 @@
-.PHONY: install db dev test stop reset-db revision upgrade downgrade
+.PHONY: setup install db dev test stop reset-db revision upgrade downgrade
 
+PYTHON_BOOTSTRAP ?= python3
 PYTHON := .venv/bin/python
+
+setup:
+	$(PYTHON_BOOTSTRAP) -m venv .venv
+	$(PYTHON) -m pip install --upgrade pip
+	$(PYTHON) -m pip install -r requirements.txt
+	npm --prefix frontend ci
+	@echo "Setup complete. Activate the virtual environment with: source .venv/bin/activate"
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
