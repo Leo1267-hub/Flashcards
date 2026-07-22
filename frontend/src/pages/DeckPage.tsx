@@ -67,7 +67,7 @@ function DeckPage() {
                 }),
             });
             setCards((currentCards) => [...currentCards, newCard]);
-            closeCreateModal();
+            resetForm();
         } catch {
             setMessage('Could not create the card');
         } finally {
