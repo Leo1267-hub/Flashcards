@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database import get_db
 from backend.models import Card, Deck
-from backend.schemas.decks import DeckCreate, DeckResponse, DeckUpdate,DeckSummaryResponse
+from backend.schemas.decks import DeckCreate, DeckUpdate, DeckSummaryResponse
 from backend.services.helpers import check_deck, get_current_user
 
 router = APIRouter(prefix="/decks", tags=["Decks"])
@@ -54,7 +54,7 @@ async def get_decks(
         dict(row)
         for row in result.mappings().all()
     ]
-@router.post("", status_code=201, response_model=DeckResponse)
+@router.post("", status_code=201, response_model=DeckSummaryResponse)
 async def create_deck(deck: DeckCreate, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     db_deck = Deck(name=deck.name, description=deck.description, user_id=current_user.id)
     db.add(db_deck)
@@ -63,7 +63,7 @@ async def create_deck(deck: DeckCreate, db: AsyncSession = Depends(get_db), curr
     return db_deck
 
 
-@router.patch("/{deck_id}", response_model=DeckResponse)
+@router.patch("/{deck_id}", response_model=DeckSummaryResponse)
 async def update_deck(
     deck_id: int,
     update: DeckUpdate,
