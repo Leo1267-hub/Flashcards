@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { Deck } from "../types/deck";
 
 type DeckListItemProps = {
@@ -16,17 +16,26 @@ function DeckListItem({
     const hasDue = deck.due_count > 0;
 
     return (
-        <li className="group card-surface flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
+        <li
+            className="group card-surface flex cursor-pointer flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]"
+            onClick={() => navigate(`/decks/${deck.id}`)}
+            onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    navigate(`/decks/${deck.id}`);
+                }
+            }}
+            role="link"
+            tabIndex={0}
+            aria-label={`Open deck ${deck.name}`}
+        >
             <div className="h-1.5 w-full bg-gradient-to-r from-brand-500 to-brand-700" />
 
             <div className="flex flex-1 flex-col gap-4 p-5">
                 <div className="flex items-start justify-between gap-3">
-                    <Link
-                        to={`/decks/${deck.id}`}
-                        className="text-left text-lg font-semibold text-slate-900 transition-colors hover:text-brand-600 dark:text-slate-100 dark:hover:text-brand-400"
-                    >
+                    <h2 className="text-left text-lg font-semibold text-slate-900 transition-colors group-hover:text-brand-600 dark:text-slate-100 dark:group-hover:text-brand-400">
                         {deck.name}
-                    </Link>
+                    </h2>
                     {hasDue ? (
                         <span className="shrink-0 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-200 dark:bg-brand-500/15 dark:text-brand-300 dark:ring-brand-400/25">
                             {deck.due_count} due
@@ -52,7 +61,10 @@ function DeckListItem({
                     {deck.card_count} {deck.card_count === 1 ? "card" : "cards"}
                 </div>
 
-                <div className="flex items-center gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <div
+                    className="flex items-center gap-2 border-t border-slate-100 pt-4 dark:border-slate-800"
+                    onClick={(event) => event.stopPropagation()}
+                >
                     <button
                         type="button"
                         className="btn-primary flex-1"
