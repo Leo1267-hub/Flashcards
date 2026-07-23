@@ -1,4 +1,3 @@
-
 export type Card = {
     id: number;
     front: string;
@@ -11,4 +10,9 @@ export type Card = {
     difficulty: number | null;
     due: string;
     last_review: string | null;
+};
+
+export type CardReviewResponse = {
+    card: Card;
+    review_id: number;
 };

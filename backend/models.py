@@ -102,6 +102,64 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
         )
+
+class ReviewEvent(Base):
+    __tablename__ = "review_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    card_id: Mapped[int] = mapped_column(
+        ForeignKey("cards.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    rating: Mapped[int] = mapped_column(nullable=False)
+
+    reviewed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+
+    duration_ms: Mapped[int | None] = mapped_column(nullable=True)
+
+    before_state: Mapped[int] = mapped_column(nullable=False)
+    before_step: Mapped[int | None] = mapped_column(nullable=True)
+    before_stability: Mapped[float | None] = mapped_column(nullable=True)
+    before_difficulty: Mapped[float | None] = mapped_column(nullable=True)
+    before_due: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    before_last_review: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    after_state: Mapped[int] = mapped_column(nullable=False)
+    after_step: Mapped[int | None] = mapped_column(nullable=True)
+    after_stability: Mapped[float | None] = mapped_column(nullable=True)
+    after_difficulty: Mapped[float | None] = mapped_column(nullable=True)
+    after_due: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    after_last_review: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    undone_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     
     
     
