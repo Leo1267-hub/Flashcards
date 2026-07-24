@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BrandMark } from "../components/Navbar";
+import PasswordInput from "../components/PasswordInput";
 import ThemeToggle from "../components/ThemeToggle";
 
 function LoginPage() {
@@ -64,13 +65,10 @@ function LoginPage() {
 
                     <div className="flex flex-col gap-1.5">
                         <label htmlFor="password" className="field-label">Password</label>
-                        <input
+                        <PasswordInput
                             id="password"
-                            className="field-input"
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
-                            placeholder="••••••••"
-                            type="password"
                             autoComplete="current-password"
                         />
                     </div>
