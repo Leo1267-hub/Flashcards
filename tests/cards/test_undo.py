@@ -44,7 +44,24 @@ async def test_undo_review_restores_card_state(auth_ac):
 
 
 @pytest.mark.asyncio
-async def test_undo_review_rejects_already_undone(auth_ac):
+async def test_undo_review_restores_deck_due_count(auth_ac):
+    deck = await create_deck(auth_ac)
+    card = await create_card(auth_ac, deck["id"])
+
+    before = await auth_ac.get("/decks")
+    assert before.json()[0]["due_count"] == 1
+
+    review = await review_card(auth_ac, card["id"], rating=4)
+    after_review = await auth_ac.get("/decks")
+    assert after_review.json()[0]["due_count"] == 0
+    assert review["card"]["due"] != card["due"]
+
+    undo = await auth_ac.post(f'/reviews/{review["review_id"]}/undo')
+    assert undo.status_code == 200
+
+    after_undo = await auth_ac.get("/decks")
+    assert after_undo.json()[0]["due_count"] == 1
+
     deck = await create_deck(auth_ac)
     card = await create_card(auth_ac, deck["id"])
     review = await review_card(auth_ac, card["id"])

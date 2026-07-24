@@ -17,6 +17,56 @@ type ReviewSnapshot = {
     isFinished: boolean;
 };
 
+function cloneCard(card: Card): Card {
+    return { ...card };
+}
+
+function cloneSnapshot(
+    reviewId: number,
+    learningQueue: LearningQueueItem[],
+    remainingCards: Card[],
+    isFinished: boolean,
+): ReviewSnapshot {
+    return {
+        reviewId,
+        isFinished,
+        remainingCards: remainingCards.map(cloneCard),
+        learningQueue: learningQueue.map((item) => ({
+            dueAt: item.dueAt,
+            card: cloneCard(item.card),
+        })),
+    };
+}
+
+function queuesWithoutCard(
+    cardId: number,
+    learningQueue: LearningQueueItem[],
+    remainingCards: Card[],
+) {
+    return {
+        learningQueue: learningQueue.filter((item) => item.card.id !== cardId),
+        remainingCards: remainingCards.filter((card) => card.id !== cardId),
+    };
+}
+
+function countCardsLeft(
+    currentCard: Card | null,
+    remainingCards: Card[],
+    learningQueue: LearningQueueItem[],
+) {
+    const ids = new Set<number>();
+    if (currentCard) {
+        ids.add(currentCard.id);
+    }
+    for (const card of remainingCards) {
+        ids.add(card.id);
+    }
+    for (const item of learningQueue) {
+        ids.add(item.card.id);
+    }
+    return ids.size;
+}
+
 function StudyPage() {
 
     const { deckId } = useParams<{ deckId: string }>();
@@ -130,11 +180,6 @@ function StudyPage() {
 
         setIsRating(true);
         try {
-            const snapshot: Omit<ReviewSnapshot, "reviewId"> = {
-                learningQueue,
-                remainingCards,
-                isFinished,
-            };
             const { card, review_id }: CardReviewResponse = await apiFetch(
                 `/cards/${currentCard.id}/review`,
                 {
@@ -144,7 +189,7 @@ function StudyPage() {
             );
             setReviewHistory((history) => [
                 ...history,
-                { ...snapshot, reviewId: review_id },
+                cloneSnapshot(review_id, learningQueue, remainingCards, isFinished),
             ]);
             setRedoHistory([]);
             moveAfterReview(card);
@@ -170,8 +215,14 @@ function StudyPage() {
 
             setReviewHistory((history) => history.slice(0, -1));
             setRedoHistory((history) => [...history, snapshot]);
-            setLearningQueue(snapshot.learningQueue);
-            setRemainingCards(snapshot.remainingCards);
+
+            const queues = queuesWithoutCard(
+                restoredCard.id,
+                snapshot.learningQueue,
+                snapshot.remainingCards,
+            );
+            setLearningQueue(queues.learningQueue);
+            setRemainingCards(queues.remainingCards);
             setIsFinished(snapshot.isFinished);
             setCurrentCard(restoredCard);
             setReviewOptions(null);
@@ -210,7 +261,12 @@ function StudyPage() {
         setReviewOptions(null);
         setIsAnswerVisible(false);
 
-        let updatedLearningQueue = [...learningQueue];
+        let updatedLearningQueue = learningQueue.filter(
+            (item) => item.card.id !== reviewedCard.id
+        );
+        const updatedRemainingCards = remainingCards.filter(
+            (card) => card.id !== reviewedCard.id
+        );
 
         const shouldEnterLearningQueue =
             reviewedCard.fsrs_state === FSRS_LEARNING ||
@@ -227,7 +283,11 @@ function StudyPage() {
             );
         }
 
-        const next = getNextCard(updatedLearningQueue, remainingCards, reviewedCard.id);
+        const next = getNextCard(
+            updatedLearningQueue,
+            updatedRemainingCards,
+            reviewedCard.id,
+        );
 
         setLearningQueue(next.learningQueue);
         setRemainingCards(next.remainingCards);
@@ -470,7 +530,7 @@ function StudyPage() {
         return null;
     }
 
-    const remaining = remainingCards.length + learningQueue.length + 1;
+    const remaining = countCardsLeft(currentCard, remainingCards, learningQueue);
     const reviewed = Math.max(0, totalToStudy - remaining);
     const progress = totalToStudy > 0 ? (reviewed / totalToStudy) * 100 : 0;
 
