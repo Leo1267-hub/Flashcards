@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import ColumnElement, DateTime, Float, ForeignKey, Integer, String, Text, and_, or_
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database import Base
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
+FSRS_LEARNING = 1
+FSRS_RELEARNING = 3
+LEARN_AHEAD = timedelta(minutes=20)
 
 
 class Deck(Base):
@@ -37,13 +41,7 @@ class Deck(Base):
     
     @property
     def due_count(self) -> int:
-        now = datetime.now(timezone.utc)
-
-        return sum(
-            1
-            for card in self.cards
-            if card.due <= now
-        )
+        return sum(1 for card in self.cards if card.is_due)
         
 
 class Card(Base):
@@ -90,6 +88,30 @@ class Card(Base):
     )
         
     deck: Mapped[Deck] = relationship(back_populates='cards')
+    @hybrid_property
+    def is_due(self) -> bool:
+        now = datetime.now(timezone.utc)
+
+        if self.due <= now:
+            return True
+
+        return (
+            self.fsrs_state in (FSRS_LEARNING, FSRS_RELEARNING)
+            and self.due <= now + LEARN_AHEAD
+        )
+
+    @is_due.inplace.expression
+    @classmethod
+    def _is_due_expression(cls) -> ColumnElement[bool]:
+        now = datetime.now(timezone.utc)
+
+        return or_(
+            cls.due <= now,
+            and_(
+                cls.fsrs_state.in_((FSRS_LEARNING, FSRS_RELEARNING)),
+                cls.due <= now + LEARN_AHEAD,
+            ),
+        )
     
 class User(Base):
     __tablename__ = "users"

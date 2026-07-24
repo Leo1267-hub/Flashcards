@@ -88,6 +88,31 @@ async def test_get_one_deck_includes_card_and_due_counts(auth_ac):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("rating", [1, 2, 3])
+async def test_due_count_keeps_counting_cards_still_in_learning(auth_ac, rating):
+    deck = await create_deck(auth_ac)
+    card = await create_card(auth_ac, deck["id"])
+
+    review = await auth_ac.post(
+        f'/cards/{card["id"]}/review',
+        json={"rating": rating},
+    )
+    assert review.status_code == 200
+
+    reviewed_card = review.json()["card"]
+    assert reviewed_card["fsrs_state"] in (1, 3)
+    assert reviewed_card["due"] > card["due"]
+
+    decks_response = await auth_ac.get("/decks")
+    deck_response = await auth_ac.get(f'/decks/{deck["id"]}')
+    study_response = await auth_ac.get(f'/decks/{deck["id"]}/study-cards')
+
+    assert decks_response.json()[0]["due_count"] == 1
+    assert deck_response.json()["due_count"] == 1
+    assert len(study_response.json()) == 1
+
+
+@pytest.mark.asyncio
 async def test_get_missing_deck_returns_404(auth_ac):
     response = await auth_ac.get("/decks/999999")
 

@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,8 +19,6 @@ async def get_decks(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    now = datetime.now(timezone.utc)
-
     query = (
         select(
             Deck.id,
@@ -31,7 +27,7 @@ async def get_decks(
             func.count(Card.id).label("card_count"),
             func.count(
                 case(
-                    (Card.due <= now, 1),
+                    (Card.is_due, 1),
                 )
             ).label("due_count"),
         )

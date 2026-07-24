@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import and_, or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from backend.database import get_db
 from backend.models import Card, ReviewEvent
 from backend.schemas.cards import (
@@ -20,10 +20,6 @@ from backend.services.fsrs_service import (
     to_fsrs_card,
     get_review_options,
 )
-
-FSRS_LEARNING = 1
-FSRS_RELEARNING = 3
-LEARN_AHEAD_MINUTES = 20
 
 router = APIRouter(tags=["Cards"])
 
@@ -278,21 +274,10 @@ async def get_study_cards(
 ):
     await check_deck(deck_id, db, current_user)
 
-    now = datetime.now(timezone.utc)
-    learn_ahead_time = now + timedelta(minutes=LEARN_AHEAD_MINUTES)
-
     query = (
-        select(Card).where(
-            Card.deck_id == deck_id,
-            or_(
-                Card.due <= now,
-                and_(
-                    Card.fsrs_state.in_([FSRS_LEARNING, FSRS_RELEARNING]),
-                    Card.due <= learn_ahead_time,
-                ),
-            ),
-        ).order_by(Card.due)
+        select(Card)
+        .where(Card.deck_id == deck_id, Card.is_due)
+        .order_by(Card.due)
     )
-    
 
     return (await db.scalars(query)).all()
