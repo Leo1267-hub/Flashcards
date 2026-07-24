@@ -30,7 +30,9 @@ function StudyPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRating, setIsRating] = useState(false);
     const [isUndoing, setIsUndoing] = useState(false);
+    const [isRedoing, setIsRedoing] = useState(false);
     const [reviewHistory, setReviewHistory] = useState<ReviewSnapshot[]>([]);
+    const [redoHistory, setRedoHistory] = useState<ReviewSnapshot[]>([]);
     const [message, setMessage] = useState("");
     const [reviewOptions, setReviewOptions] =
         useState<ReviewOptions | null>(null);
@@ -124,7 +126,7 @@ function StudyPage() {
     }
 
     async function rateCard(rating: Rating) {
-        if (isRating || isUndoing || !currentCard) return;
+        if (isRating || isUndoing || isRedoing || !currentCard) return;
 
         setIsRating(true);
         try {
@@ -144,6 +146,7 @@ function StudyPage() {
                 ...history,
                 { ...snapshot, reviewId: review_id },
             ]);
+            setRedoHistory([]);
             moveAfterReview(card);
         } catch {
             setMessage("Could not save review");
@@ -153,7 +156,7 @@ function StudyPage() {
     }
 
     async function undoLastReview() {
-        if (reviewHistory.length === 0 || isUndoing || isRating) return;
+        if (reviewHistory.length === 0 || isUndoing || isRedoing || isRating) return;
 
         const snapshot = reviewHistory[reviewHistory.length - 1];
 
@@ -166,6 +169,7 @@ function StudyPage() {
             );
 
             setReviewHistory((history) => history.slice(0, -1));
+            setRedoHistory((history) => [...history, snapshot]);
             setLearningQueue(snapshot.learningQueue);
             setRemainingCards(snapshot.remainingCards);
             setIsFinished(snapshot.isFinished);
@@ -176,6 +180,29 @@ function StudyPage() {
             setMessage("Could not undo review");
         } finally {
             setIsUndoing(false);
+        }
+    }
+
+    async function redoLastReview() {
+        if (redoHistory.length === 0 || isUndoing || isRedoing || isRating) return;
+
+        const snapshot = redoHistory[redoHistory.length - 1];
+
+        setIsRedoing(true);
+        setMessage("");
+        try {
+            const redoneCard: Card = await apiFetch(
+                `/reviews/${snapshot.reviewId}/redo`,
+                { method: "POST" }
+            );
+
+            setRedoHistory((history) => history.slice(0, -1));
+            setReviewHistory((history) => [...history, snapshot]);
+            moveAfterReview(redoneCard);
+        } catch {
+            setMessage("Could not redo review");
+        } finally {
+            setIsRedoing(false);
         }
     }
 
@@ -215,6 +242,7 @@ function StudyPage() {
                 event.repeat ||
                 isRating ||
                 isUndoing ||
+                isRedoing ||
                 (target instanceof HTMLElement && target.isContentEditable) ||
                 target instanceof HTMLInputElement ||
                 target instanceof HTMLTextAreaElement ||
@@ -224,9 +252,13 @@ function StudyPage() {
             }
 
             if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
-                if (reviewHistory.length === 0) return;
                 event.preventDefault();
-                void undoLastReview();
+                if (event.shiftKey) {
+                    if (redoHistory.length === 0) return;
+                    void redoLastReview();
+                } else if (reviewHistory.length > 0) {
+                    void undoLastReview();
+                }
                 return;
             }
 
@@ -254,7 +286,9 @@ function StudyPage() {
         isFinished,
         isRating,
         isUndoing,
+        isRedoing,
         reviewHistory,
+        redoHistory,
         reviewOptions,
     ]);
 
@@ -289,17 +323,49 @@ function StudyPage() {
     }
 
     const canUndo = reviewHistory.length > 0;
+    const canRedo = redoHistory.length > 0;
+    const historyBusy = isUndoing || isRedoing || isRating;
+
+    const undoIcon = (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 7v6h6" />
+            <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6.36 2.64L3 13" />
+        </svg>
+    );
+
+    const redoIcon = (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 7v6h-6" />
+            <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64L21 13" />
+        </svg>
+    );
 
     const undoButton = canUndo ? (
         <button
             type="button"
             className="btn-ghost"
             onClick={() => void undoLastReview()}
-            disabled={isUndoing || isRating}
+            disabled={historyBusy}
         >
+            {undoIcon}
             {isUndoing ? "Undoing…" : "Undo"}
-            <kbd className="ml-1.5 rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            <kbd className="ml-0.5 rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                 ⌘Z
+            </kbd>
+        </button>
+    ) : null;
+
+    const redoButton = canRedo ? (
+        <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => void redoLastReview()}
+            disabled={historyBusy}
+        >
+            {redoIcon}
+            {isRedoing ? "Redoing…" : "Redo"}
+            <kbd className="ml-0.5 rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                ⇧⌘Z
             </kbd>
         </button>
     ) : null;
@@ -322,6 +388,7 @@ function StudyPage() {
                     <p className="text-sm text-slate-500 dark:text-slate-400">{message}</p>
                     <div className="mt-5 flex items-center gap-3">
                         {undoButton}
+                        {redoButton}
                         <Link to="/decks" className="btn-secondary">Back to decks</Link>
                     </div>
                 </main>
@@ -331,7 +398,14 @@ function StudyPage() {
     if (isFinished) {
         return (
             <div className="min-h-svh">
-                <Navbar right={undoButton} />
+                <Navbar
+                    right={
+                        <div className="flex items-center gap-2">
+                            {undoButton}
+                            {redoButton}
+                        </div>
+                    }
+                />
                 <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-20 text-center sm:px-6">
                     <div className="grid h-16 w-16 place-items-center rounded-2xl bg-emerald-50 text-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-400">
                         <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -348,9 +422,21 @@ function StudyPage() {
                                 type="button"
                                 className="btn-secondary"
                                 onClick={() => void undoLastReview()}
-                                disabled={isUndoing || isRating}
+                                disabled={historyBusy}
                             >
+                                {undoIcon}
                                 {isUndoing ? "Undoing…" : "Undo last review"}
+                            </button>
+                        )}
+                        {canRedo && (
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => void redoLastReview()}
+                                disabled={historyBusy}
+                            >
+                                {redoIcon}
+                                {isRedoing ? "Redoing…" : "Redo"}
                             </button>
                         )}
                         <Link to={`/decks/${deckId}`} className="btn-primary">
@@ -410,6 +496,7 @@ function StudyPage() {
                 right={
                     <div className="flex items-center gap-2">
                         {undoButton}
+                        {redoButton}
                         <Link
                             to={`/decks/${deckId}`}
                             className="btn-ghost"
@@ -479,7 +566,7 @@ function StudyPage() {
                                             key={option.rating}
                                             type="button"
                                             onClick={() => rateCard(option.rating)}
-                                            disabled={isRating || isUndoing}
+                                            disabled={isRating || isUndoing || isRedoing}
                                             className={`flex flex-col items-center gap-1 rounded-xl border px-3 py-3 text-sm font-semibold transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 ${option.classes}`}
                                         >
                                             <span className="flex items-center gap-1.5">

@@ -204,6 +204,52 @@ async def undo_review(
     return card
 
 
+@router.post("/reviews/{review_id}/redo", response_model=CardResponse)
+async def redo_review(
+    review_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    event = await db.get(ReviewEvent, review_id)
+    if event is None or event.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    if event.undone_at is  None:
+        raise HTTPException(status_code=409, detail="Review not undone")
+
+    latest_undone_id = await db.scalar(
+        select(ReviewEvent.id)
+        .where(
+            ReviewEvent.card_id == event.card_id,
+            ReviewEvent.undone_at.is_not(None),
+        )
+        .order_by(ReviewEvent.reviewed_at.desc(), ReviewEvent.id.desc())
+        .limit(1)
+    )
+    if latest_undone_id != event.id:
+        raise HTTPException(
+            status_code=409,
+            detail="Only the latest undone review for this card can be redone",
+        )
+
+    card = await db.get(Card, event.card_id)
+    if card is None:
+        raise HTTPException(status_code=404, detail="Card not found")
+
+    card.fsrs_state = event.after_state
+    card.fsrs_step = event.after_step
+    card.stability = event.after_stability
+    card.difficulty = event.after_difficulty
+    card.due = event.after_due
+    card.last_review = event.after_last_review
+
+    event.undone_at = None
+
+    await db.commit()
+    await db.refresh(card)
+
+    return card
+
 @router.get(
     "/cards/{card_id}/review-options",
     response_model=CardReviewOptions,
