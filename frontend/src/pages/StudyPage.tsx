@@ -340,12 +340,13 @@ function StudyPage() {
         </svg>
     );
 
-    const undoButton = canUndo ? (
+    const undoButton = (
         <button
             type="button"
             className="btn-ghost"
             onClick={() => void undoLastReview()}
-            disabled={historyBusy}
+            disabled={!canUndo || historyBusy}
+            aria-disabled={!canUndo || historyBusy}
         >
             {undoIcon}
             {isUndoing ? "Undoing…" : "Undo"}
@@ -353,14 +354,15 @@ function StudyPage() {
                 ⌘Z
             </kbd>
         </button>
-    ) : null;
+    );
 
-    const redoButton = canRedo ? (
+    const redoButton = (
         <button
             type="button"
             className="btn-ghost"
             onClick={() => void redoLastReview()}
-            disabled={historyBusy}
+            disabled={!canRedo || historyBusy}
+            aria-disabled={!canRedo || historyBusy}
         >
             {redoIcon}
             {isRedoing ? "Redoing…" : "Redo"}
@@ -368,7 +370,7 @@ function StudyPage() {
                 ⇧⌘Z
             </kbd>
         </button>
-    ) : null;
+    );
 
     if (isLoading) {
         return (
@@ -417,28 +419,24 @@ function StudyPage() {
                         You reviewed every due card in this deck. Great job!
                     </p>
                     <div className="mt-6 flex items-center gap-3">
-                        {canUndo && (
-                            <button
-                                type="button"
-                                className="btn-secondary"
-                                onClick={() => void undoLastReview()}
-                                disabled={historyBusy}
-                            >
-                                {undoIcon}
-                                {isUndoing ? "Undoing…" : "Undo last review"}
-                            </button>
-                        )}
-                        {canRedo && (
-                            <button
-                                type="button"
-                                className="btn-secondary"
-                                onClick={() => void redoLastReview()}
-                                disabled={historyBusy}
-                            >
-                                {redoIcon}
-                                {isRedoing ? "Redoing…" : "Redo"}
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => void undoLastReview()}
+                            disabled={!canUndo || historyBusy}
+                        >
+                            {undoIcon}
+                            {isUndoing ? "Undoing…" : "Undo last review"}
+                        </button>
+                        <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => void redoLastReview()}
+                            disabled={!canRedo || historyBusy}
+                        >
+                            {redoIcon}
+                            {isRedoing ? "Redoing…" : "Redo"}
+                        </button>
                         <Link to={`/decks/${deckId}`} className="btn-primary">
                             Back to deck
                         </Link>
