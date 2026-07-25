@@ -4,11 +4,10 @@ import CardListItem from "./CardListItem";
 type CardListProps = {
     cards: Card[];
     deletingCardId: number | null;
-    onEdit: (card: Card) => void;
     onDelete: (cardId: number) => void;
 };
 
-function CardList({ cards, deletingCardId, onEdit, onDelete }: CardListProps) {
+function CardList({ cards, deletingCardId, onDelete }: CardListProps) {
     if (cards.length === 0) {
         return (
             <div className="mt-6 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/40">
@@ -25,7 +24,6 @@ function CardList({ cards, deletingCardId, onEdit, onDelete }: CardListProps) {
                     key={card.id}
                     card={card}
                     isDeleting={deletingCardId === card.id}
-                    onEdit={onEdit}
                     onDelete={onDelete}
                 />
             ))}

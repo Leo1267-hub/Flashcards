@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
-import CardFormModal from "../components/CardFormModal";
 import CardList from "../components/CardList";
 import Navbar from "../components/Navbar";
 import type { Card } from "../types/card";
@@ -15,12 +13,7 @@ function DeckPage() {
     const [cards, setCards] = useState<Card[]>([]);
     const [message, setMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [editingCard, setEditingCard] = useState<Card | null>(null);
-    const [isUpdating, setIsUpdating] = useState(false);
     const [deletingCardId, setDeletingCardId] = useState<number | null>(null);
-    const [front, setFront] = useState('');
-    const [back, setBack] = useState('');
-    const isCardValid = front.trim().length > 0 && back.trim().length > 0;
 
     useEffect(() => {
         async function loadDeck() {
@@ -47,36 +40,6 @@ function DeckPage() {
         loadDeck();
     }, [deckId]);
 
-    async function updateCard(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        if (!editingCard || !isCardValid) {
-            return;
-        }
-
-        setIsUpdating(true);
-        setMessage('');
-
-        try {
-            const updatedCard = await apiFetch(`/cards/${editingCard.id}`, {
-                method: 'PATCH',
-                body: JSON.stringify({
-                    front: front.trim(),
-                    back: back.trim(),
-                }),
-            });
-            setCards((currentCards) =>
-                currentCards.map((card) =>
-                    card.id === updatedCard.id ? updatedCard : card
-                )
-            );
-            closeEditModal();
-        } catch {
-            setMessage('Could not update the card');
-        } finally {
-            setIsUpdating(false);
-        }
-    }
-
     async function deleteCard(cardId: number) {
         setDeletingCardId(cardId);
         setMessage('');
@@ -91,20 +54,6 @@ function DeckPage() {
         } finally {
             setDeletingCardId(null);
         }
-    }
-
-    function openEditModal(card: Card) {
-        setEditingCard(card);
-        setFront(card.front);
-        setBack(card.back);
-        setMessage('');
-    }
-
-    function closeEditModal() {
-        setEditingCard(null);
-        setFront('');
-        setBack('');
-        setMessage('');
     }
 
     if (isLoading) {
@@ -191,28 +140,13 @@ function DeckPage() {
                     </Link>
                 </div>
 
-                {editingCard && (
-                    <CardFormModal
-                        front={front}
-                        back={back}
-                        isSubmitting={isUpdating}
-                        isValid={isCardValid}
-                        message={message}
-                        onFrontChange={setFront}
-                        onBackChange={setBack}
-                        onSubmit={updateCard}
-                        onClose={closeEditModal}
-                    />
-                )}
-
                 <CardList
                     cards={cards}
                     deletingCardId={deletingCardId}
-                    onEdit={openEditModal}
                     onDelete={deleteCard}
                 />
 
-                {message && !editingCard && (
+                {message && (
                     <p role="alert" className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
                         {message}
                     </p>

@@ -5,6 +5,7 @@ import "./App.css";
 import SignupPage from "./pages/SignupPage";
 import DeckPage from "./pages/DeckPage";
 import AddCardPage from "./pages/AddCardPage";
+import EditCardPage from "./pages/EditCardPage";
 import StudyPage from "./pages/StudyPage";
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/decks" element={<DecksPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/decks/:deckId/cards/new" element={<AddCardPage />} />
+        <Route path="/decks/:deckId/cards/:cardId/edit" element={<EditCardPage />} />
         <Route path="/decks/:deckId/study" element={<StudyPage />} />
       </Routes>
     </BrowserRouter>
