@@ -33,7 +33,7 @@ function DeckListItem({
 
             <div className="flex flex-1 flex-col gap-4 p-5">
                 <div className="flex items-start justify-between gap-3">
-                    <h2 className="text-left text-lg font-semibold text-slate-900 transition-colors group-hover:text-brand-600 dark:text-slate-100 dark:group-hover:text-brand-400">
+                    <h2 className="min-w-0 flex-1 line-clamp-2 break-all text-left text-lg font-semibold text-slate-900 transition-colors group-hover:text-brand-600 dark:text-slate-100 dark:group-hover:text-brand-400">
                         {deck.name}
                     </h2>
                     {hasDue ? (
@@ -48,7 +48,7 @@ function DeckListItem({
                 </div>
 
                 {deck.description && (
-                    <p className="line-clamp-2 text-left text-sm text-slate-500 dark:text-slate-400">
+                    <p className="line-clamp-2 break-all text-left text-sm text-slate-500 dark:text-slate-400">
                         {deck.description}
                     </p>
                 )}

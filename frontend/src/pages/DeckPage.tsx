@@ -160,20 +160,22 @@ function DeckPage() {
                     Back to decks
                 </Link>
 
-                <div className="mt-4 flex flex-col gap-4 border-b border-slate-200 pb-6 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                <div className="mt-4 flex flex-col gap-4 border-b border-slate-200 pb-6 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+                    <div className="min-w-0 flex-1">
+                        <h1 className="text-3xl font-bold tracking-tight break-all text-slate-900 dark:text-slate-100">
                             {deck.name}
                         </h1>
                         {deck.description && (
-                            <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{deck.description}</p>
+                            <p className="mt-2 max-w-2xl text-sm leading-relaxed break-all text-slate-500 dark:text-slate-400">
+                                {deck.description}
+                            </p>
                         )}
                         <p className="mt-3 text-sm font-medium text-slate-400 dark:text-slate-500">
                             {cards.length} {cards.length === 1 ? "card" : "cards"}
                         </p>
                     </div>
                     {cards.length > 0 && (
-                        <Link to={`/decks/${deck.id}/study`} className="btn-primary shrink-0">
+                        <Link to={`/decks/${deck.id}/study`} className="btn-primary shrink-0 self-start">
                             Study deck
                         </Link>
                     )}
