@@ -15,8 +15,6 @@ function DeckPage() {
     const [cards, setCards] = useState<Card[]>([]);
     const [message, setMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [isCreating, setIsCreating] = useState(false);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingCard, setEditingCard] = useState<Card | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
     const [deletingCardId, setDeletingCardId] = useState<number | null>(null);
@@ -48,32 +46,6 @@ function DeckPage() {
 
         loadDeck();
     }, [deckId]);
-
-    async function createCard(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        if (!isCardValid) {
-            return;
-        }
-
-        setIsCreating(true);
-        setMessage('');
-
-        try {
-            const newCard = await apiFetch(`/decks/${deckId}/cards`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    front: front.trim(),
-                    back: back.trim(),
-                }),
-            });
-            setCards((currentCards) => [...currentCards, newCard]);
-            resetForm();
-        } catch {
-            setMessage('Could not create the card');
-        } finally {
-            setIsCreating(false);
-        }
-    }
 
     async function updateCard(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -121,21 +93,7 @@ function DeckPage() {
         }
     }
 
-    function openCreateModal() {
-        setEditingCard(null);
-        setFront('');
-        setBack('');
-        setMessage('');
-        setIsCreateModalOpen(true);
-    }
-
-    function closeCreateModal() {
-        setIsCreateModalOpen(false);
-        resetForm();
-    }
-
     function openEditModal(card: Card) {
-        setIsCreateModalOpen(false);
         setEditingCard(card);
         setFront(card.front);
         setBack(card.back);
@@ -144,10 +102,6 @@ function DeckPage() {
 
     function closeEditModal() {
         setEditingCard(null);
-        resetForm();
-    }
-
-    function resetForm() {
         setFront('');
         setBack('');
         setMessage('');
@@ -227,32 +181,16 @@ function DeckPage() {
 
                 <div className="mt-6 flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Cards</h2>
-                    <button type="button" className="btn-secondary" onClick={openCreateModal}>
+                    <Link to={`/decks/${deck.id}/cards/new`} className="btn-secondary">
                         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                             <path d="M12 5v14M5 12h14" />
                         </svg>
                         Add card
-                    </button>
+                    </Link>
                 </div>
-
-                {isCreateModalOpen && (
-                    <CardFormModal
-                        mode="create"
-                        front={front}
-                        back={back}
-                        isSubmitting={isCreating}
-                        isValid={isCardValid}
-                        message={message}
-                        onFrontChange={setFront}
-                        onBackChange={setBack}
-                        onSubmit={createCard}
-                        onClose={closeCreateModal}
-                    />
-                )}
 
                 {editingCard && (
                     <CardFormModal
-                        mode="edit"
                         front={front}
                         back={back}
                         isSubmitting={isUpdating}
@@ -272,7 +210,7 @@ function DeckPage() {
                     onDelete={deleteCard}
                 />
 
-                {message && (
+                {message && !editingCard && (
                     <p role="alert" className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
                         {message}
                     </p>

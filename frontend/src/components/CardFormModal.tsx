@@ -2,7 +2,6 @@ import type { FormEvent } from "react";
 import Modal from "./Modal";
 
 type CardFormModalProps = {
-    mode: "create" | "edit";
     front: string;
     back: string;
     isSubmitting: boolean;
@@ -15,7 +14,6 @@ type CardFormModalProps = {
 };
 
 function CardFormModal({
-    mode,
     front,
     back,
     isSubmitting,
@@ -26,24 +24,20 @@ function CardFormModal({
     onSubmit,
     onClose,
 }: CardFormModalProps) {
-    const isCreating = mode === "create";
-    const fieldPrefix = isCreating ? "card" : "edit-card";
-
     return (
         <Modal onClose={onClose}>
             <form onSubmit={onSubmit} className="flex flex-col gap-5">
                 <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                    {isCreating ? "Create a card" : "Edit card"}
+                    Edit card
                 </h2>
 
                 <div className="flex flex-col gap-1.5">
-                    <label htmlFor={`${fieldPrefix}-front`} className="field-label">Front</label>
+                    <label htmlFor="edit-card-front" className="field-label">Front</label>
                     <textarea
-                        id={`${fieldPrefix}-front`}
+                        id="edit-card-front"
                         className="field-input min-h-24 resize-y"
                         value={front}
                         onChange={(event) => onFrontChange(event.target.value)}
-                        placeholder={isCreating ? "Question or prompt" : undefined}
                         maxLength={500}
                         required
                         autoFocus
@@ -51,13 +45,12 @@ function CardFormModal({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                    <label htmlFor={`${fieldPrefix}-back`} className="field-label">Back</label>
+                    <label htmlFor="edit-card-back" className="field-label">Back</label>
                     <textarea
-                        id={`${fieldPrefix}-back`}
+                        id="edit-card-back"
                         className="field-input min-h-24 resize-y"
                         value={back}
                         onChange={(event) => onBackChange(event.target.value)}
-                        placeholder={isCreating ? "Answer" : undefined}
                         maxLength={500}
                         required
                     />
@@ -74,9 +67,7 @@ function CardFormModal({
                         Cancel
                     </button>
                     <button type="submit" className="btn-primary" disabled={isSubmitting || !isValid}>
-                        {isSubmitting
-                            ? isCreating ? "Creating…" : "Saving…"
-                            : isCreating ? "Create card" : "Save changes"}
+                        {isSubmitting ? "Saving…" : "Save changes"}
                     </button>
                 </div>
             </form>
