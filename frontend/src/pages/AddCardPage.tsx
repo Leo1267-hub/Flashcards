@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
 import Navbar from "../components/Navbar";
 import type { Deck } from "../types/deck";
 
 function AddCardPage() {
     const { deckId } = useParams<{ deckId: string }>();
-    const navigate = useNavigate();
 
     const [deck, setDeck] = useState<Deck | null>(null);
     const [front, setFront] = useState("");
@@ -57,7 +56,6 @@ function AddCardPage() {
             });
             setFront("");
             setBack("");
-            navigate(`/decks/${deckId}`);
         } catch {
             setMessage("Could not create the card");
         } finally {
