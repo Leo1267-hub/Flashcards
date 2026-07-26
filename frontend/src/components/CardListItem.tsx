@@ -14,14 +14,14 @@ function CardListItem({ card, isDeleting, onDelete }: CardListItemProps) {
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                     Front
                 </p>
-                <p className="text-sm font-medium break-all text-slate-900 dark:text-slate-100">{card.front}</p>
+                <p className="text-sm font-medium wrap-break-word text-slate-900 dark:text-slate-100">{card.front}</p>
             </div>
 
             <div className="min-w-0 border-t border-slate-100 pt-3 dark:border-slate-800 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                     Back
                 </p>
-                <p className="text-sm break-all text-slate-600 dark:text-slate-300">{card.back}</p>
+                <p className="text-sm wrap-break-word text-slate-600 dark:text-slate-300">{card.back}</p>
             </div>
 
             <div className="flex items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">

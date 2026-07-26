@@ -119,7 +119,7 @@ function EditCardPage() {
                 <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
                     Edit card
                 </h1>
-                <p className="mt-2 text-sm break-all text-slate-500 dark:text-slate-400">
+                <p className="mt-2 text-sm wrap-break-word text-slate-500 dark:text-slate-400">
                     Update this flashcard in {deck.name}.
                 </p>
 

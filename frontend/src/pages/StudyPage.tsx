@@ -583,7 +583,7 @@ function StudyPage() {
                             <span className="text-xs font-semibold uppercase tracking-widest text-brand-500 dark:text-brand-400">
                                 Question
                             </span>
-                            <p className="text-2xl font-semibold leading-snug text-slate-900 dark:text-slate-100 sm:text-3xl">
+                            <p className="max-w-full text-balance wrap-break-word text-2xl font-semibold leading-snug text-slate-900 dark:text-slate-100 sm:text-3xl">
                                 {currentCard.front}
                             </p>
                         </div>
@@ -592,7 +592,7 @@ function StudyPage() {
                             <span className="text-xs font-semibold uppercase tracking-widest text-brand-500 dark:text-brand-400">
                                 Answer
                             </span>
-                            <p className="text-2xl font-semibold leading-snug text-slate-900 dark:text-slate-100 sm:text-3xl">
+                            <p className="max-w-full text-balance wrap-break-word text-2xl font-semibold leading-snug text-slate-900 dark:text-slate-100 sm:text-3xl">
                                 {currentCard.back}
                             </p>
                         </div>
