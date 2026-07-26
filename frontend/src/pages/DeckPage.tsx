@@ -119,9 +119,20 @@ function DeckPage() {
                                 {deck.description}
                             </p>
                         )}
-                        <p className="mt-3 text-sm font-medium text-slate-400 dark:text-slate-500">
-                            {cards.length} {cards.length === 1 ? "card" : "cards"}
-                        </p>
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                            <p className="text-sm font-medium text-slate-400 dark:text-slate-500">
+                                {cards.length} {cards.length === 1 ? "card" : "cards"}
+                            </p>
+                            {deck.due_count > 0 ? (
+                                <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-200 dark:bg-brand-500/15 dark:text-brand-300 dark:ring-brand-400/25">
+                                    {deck.due_count} due
+                                </span>
+                            ) : cards.length > 0 ? (
+                                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/25">
+                                    All caught up
+                                </span>
+                            ) : null}
+                        </div>
                     </div>
                     {cards.length > 0 && (
                         <Link to={`/decks/${deck.id}/study`} className="btn-primary shrink-0 self-start">
