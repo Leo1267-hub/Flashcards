@@ -1,10 +1,16 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
 import CardList from "../components/CardList";
+import InlineEditableText from "../components/InlineEditableText";
 import Navbar from "../components/Navbar";
 import type { Card } from "../types/card";
 import type { Deck } from "../types/deck";
+
+const SAVE_DEBOUNCE_MS = 600;
+
+type SaveState = "idle" | "saving" | "saved" | "error";
 
 function DeckPage() {
     const { deckId } = useParams<{ deckId: string }>();
@@ -14,6 +20,13 @@ function DeckPage() {
     const [message, setMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [deletingCardId, setDeletingCardId] = useState<number | null>(null);
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [saveState, setSaveState] = useState<SaveState>("idle");
+
+    const savedDetailsRef = useRef({ name: '', description: '' });
+    const saveTimerRef = useRef<number | undefined>(undefined);
+    const saveSequenceRef = useRef(0);
 
     useEffect(() => {
         async function loadDeck() {
@@ -24,12 +37,18 @@ function DeckPage() {
             }
 
             try {
-                const [deckData, cardsData] = await Promise.all([
+                const [deckData, cardsData]: [Deck, Card[]] = await Promise.all([
                     apiFetch(`/decks/${deckId}`),
                     apiFetch(`/decks/${deckId}/cards`),
                 ]);
                 setDeck(deckData);
                 setCards(cardsData);
+                setName(deckData.name);
+                setDescription(deckData.description ?? '');
+                savedDetailsRef.current = {
+                    name: deckData.name,
+                    description: deckData.description ?? '',
+                };
             } catch {
                 setMessage('Could not load this deck');
             } finally {
@@ -39,6 +58,86 @@ function DeckPage() {
 
         loadDeck();
     }, [deckId]);
+
+    const trimmedName = name.trim();
+    const trimmedDescription = description.trim();
+    const isNameChanged = trimmedName.length > 0 && trimmedName !== savedDetailsRef.current.name;
+    const isDescriptionChanged = trimmedDescription !== savedDetailsRef.current.description;
+    const hasPendingChanges = deck !== null && (isNameChanged || isDescriptionChanged);
+
+    const saveDetails = useCallback(async () => {
+        const payload: { name?: string; description?: string | null } = {};
+
+        if (trimmedName.length > 0 && trimmedName !== savedDetailsRef.current.name) {
+            payload.name = trimmedName;
+        }
+        if (trimmedDescription !== savedDetailsRef.current.description) {
+            payload.description = trimmedDescription.length > 0 ? trimmedDescription : null;
+        }
+        if (Object.keys(payload).length === 0) {
+            return;
+        }
+
+        const sequence = ++saveSequenceRef.current;
+        setSaveState("saving");
+
+        try {
+            const updatedDeck: Deck = await apiFetch(`/decks/${deckId}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload),
+            });
+
+            if (sequence !== saveSequenceRef.current) {
+                return;
+            }
+
+            savedDetailsRef.current = {
+                name: updatedDeck.name,
+                description: updatedDeck.description ?? '',
+            };
+            setDeck((currentDeck) =>
+                currentDeck
+                    ? { ...currentDeck, name: updatedDeck.name, description: updatedDeck.description }
+                    : currentDeck
+            );
+            setSaveState("saved");
+        } catch {
+            if (sequence === saveSequenceRef.current) {
+                setSaveState("error");
+            }
+        }
+    }, [deckId, trimmedName, trimmedDescription]);
+
+    useEffect(() => {
+        if (!hasPendingChanges) {
+            setSaveState((state) => (state === "saving" ? "idle" : state));
+            return;
+        }
+
+        setSaveState("saving");
+        saveTimerRef.current = window.setTimeout(saveDetails, SAVE_DEBOUNCE_MS);
+
+        return () => window.clearTimeout(saveTimerRef.current);
+    }, [hasPendingChanges, saveDetails]);
+
+    function saveDetailsNow() {
+        if (trimmedName.length === 0) {
+            setName(savedDetailsRef.current.name);
+        }
+        if (!hasPendingChanges) {
+            return;
+        }
+
+        window.clearTimeout(saveTimerRef.current);
+        saveDetails();
+    }
+
+    function handleNameKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            event.currentTarget.blur();
+        }
+    }
 
     async function deleteCard(cardId: number) {
         setDeletingCardId(cardId);
@@ -110,16 +209,27 @@ function DeckPage() {
                 </Link>
 
                 <div className="mt-4 flex flex-col gap-4 border-b border-slate-200 pb-6 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-                    <div className="min-w-0 flex-1">
-                        <h1 className="text-3xl font-bold tracking-tight break-all text-slate-900 dark:text-slate-100">
-                            {deck.name}
-                        </h1>
-                        {deck.description && (
-                            <p className="mt-2 max-w-2xl text-sm leading-relaxed break-all text-slate-500 dark:text-slate-400">
-                                {deck.description}
-                            </p>
-                        )}
-                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <div className="-mx-2.5 min-w-0 flex-1">
+                        <InlineEditableText
+                            value={name}
+                            onChange={setName}
+                            onBlur={saveDetailsNow}
+                            onKeyDown={handleNameKeyDown}
+                            maxLength={100}
+                            ariaLabel="Deck name"
+                            className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100"
+                        />
+                        <InlineEditableText
+                            value={description}
+                            onChange={setDescription}
+                            onBlur={saveDetailsNow}
+                            placeholder="Add a description"
+                            maxLength={500}
+                            ariaLabel="Deck description"
+                            className="mt-1 text-sm leading-relaxed text-slate-500 placeholder:text-slate-400 dark:text-slate-400 dark:placeholder:text-slate-500"
+                        />
+
+                        <div className="mt-3 flex flex-wrap items-center gap-3 px-2.5">
                             <p className="text-sm font-medium text-slate-400 dark:text-slate-500">
                                 {cards.length} {cards.length === 1 ? "card" : "cards"}
                             </p>
@@ -130,6 +240,20 @@ function DeckPage() {
                             ) : cards.length > 0 ? (
                                 <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/25">
                                     All caught up
+                                </span>
+                            ) : null}
+
+                            {trimmedName.length === 0 ? (
+                                <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                                    Name cannot be empty
+                                </span>
+                            ) : saveState === "saving" ? (
+                                <span className="text-xs font-medium text-slate-400 dark:text-slate-500">Saving…</span>
+                            ) : saveState === "saved" ? (
+                                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Saved</span>
+                            ) : saveState === "error" ? (
+                                <span role="alert" className="text-xs font-medium text-rose-600 dark:text-rose-400">
+                                    Could not save changes
                                 </span>
                             ) : null}
                         </div>
