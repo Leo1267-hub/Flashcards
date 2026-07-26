@@ -3,13 +3,11 @@ import type { Deck } from "../types/deck";
 
 type DeckListItemProps = {
     deck: Deck;
-    onEdit: (deck: Deck) => void;
     onDelete: (deckId: number) => void;
 };
 
 function DeckListItem({
     deck,
-    onEdit,
     onDelete,
 }: DeckListItemProps) {
     const navigate = useNavigate();
@@ -72,14 +70,6 @@ function DeckListItem({
                         disabled={deck.card_count === 0}
                     >
                         Study
-                    </button>
-                    <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={() => onEdit(deck)}
-                        aria-label={`Edit ${deck.name}`}
-                    >
-                        Edit
                     </button>
                     <button
                         type="button"

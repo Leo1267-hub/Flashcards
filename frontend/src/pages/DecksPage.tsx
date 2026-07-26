@@ -17,8 +17,6 @@ function DecksPage() {
     const [description, setDescription] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
-    const [isUpdating, setIsUpdating] = useState(false);
     const isDeckNameValid = name.trim().length > 0;
     const navigate = useNavigate();
 
@@ -90,57 +88,13 @@ function DecksPage() {
         }
     }
 
-    async function updateDeck(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        if (!editingDeck || !isDeckNameValid) {
-            return;
-        }
-
-        setIsUpdating(true);
-        setMessage('');
-
-        try {
-            const updatedDeck = await apiFetch(`/decks/${editingDeck.id}`, {
-                method: 'PATCH',
-                body: JSON.stringify({
-                    name: name.trim(),
-                    description: description.trim() || null,
-                }),
-            });
-            setDecks((currentDecks) =>
-                currentDecks.map((deck) =>
-                    deck.id === updatedDeck.id ? updatedDeck : deck
-                )
-            );
-            closeEditModal();
-        } catch {
-            setMessage('Could not update the deck');
-        } finally {
-            setIsUpdating(false);
-        }
-    }
-
     function openCreateModal() {
-        setEditingDeck(null);
         resetForm();
         setIsCreateModalOpen(true);
     }
 
     function closeCreateModal() {
         setIsCreateModalOpen(false);
-        resetForm();
-    }
-
-    function openEditModal(deck: Deck) {
-        setIsCreateModalOpen(false);
-        setEditingDeck(deck);
-        setName(deck.name);
-        setDescription(deck.description ?? '');
-        setMessage('');
-    }
-
-    function closeEditModal() {
-        setEditingDeck(null);
         resetForm();
     }
 
@@ -195,7 +149,6 @@ function DecksPage() {
 
                 {isCreateModalOpen && (
                     <DeckFormModal
-                        mode="create"
                         name={name}
                         description={description}
                         isSubmitting={isCreating}
@@ -205,21 +158,6 @@ function DecksPage() {
                         onDescriptionChange={setDescription}
                         onSubmit={createDeck}
                         onClose={closeCreateModal}
-                    />
-                )}
-
-                {editingDeck && (
-                    <DeckFormModal
-                        mode="edit"
-                        name={name}
-                        description={description}
-                        isSubmitting={isUpdating}
-                        isValid={isDeckNameValid}
-                        message={message}
-                        onNameChange={setName}
-                        onDescriptionChange={setDescription}
-                        onSubmit={updateDeck}
-                        onClose={closeEditModal}
                     />
                 )}
 
@@ -253,7 +191,6 @@ function DecksPage() {
                             <DeckListItem
                                 key={deck.id}
                                 deck={deck}
-                                onEdit={openEditModal}
                                 onDelete={deleteDeck}
                             />
                         ))}

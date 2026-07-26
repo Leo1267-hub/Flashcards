@@ -2,7 +2,6 @@ import type { FormEvent } from "react";
 import Modal from "./Modal";
 
 type DeckFormModalProps = {
-    mode: "create" | "edit";
     name: string;
     description: string;
     isSubmitting: boolean;
@@ -15,7 +14,6 @@ type DeckFormModalProps = {
 };
 
 function DeckFormModal({
-    mode,
     name,
     description,
     isSubmitting,
@@ -26,25 +24,22 @@ function DeckFormModal({
     onSubmit,
     onClose,
 }: DeckFormModalProps) {
-    const isCreating = mode === "create";
-    const fieldPrefix = isCreating ? "deck" : "edit-deck";
-
     return (
         <Modal onClose={onClose}>
             <form onSubmit={onSubmit} className="flex flex-col gap-5">
                 <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                    {isCreating ? "Create a deck" : "Edit deck"}
+                    Create a deck
                 </h2>
 
                 <div className="flex flex-col gap-1.5">
-                    <label htmlFor={`${fieldPrefix}-name`} className="field-label">Name</label>
+                    <label htmlFor="deck-name" className="field-label">Name</label>
                     <input
-                        id={`${fieldPrefix}-name`}
+                        id="deck-name"
                         className="field-input"
                         type="text"
                         value={name}
                         onChange={(event) => onNameChange(event.target.value)}
-                        placeholder={isCreating ? "For example: Data Structures" : undefined}
+                        placeholder="For example: Data Structures"
                         maxLength={100}
                         required
                         autoFocus
@@ -52,13 +47,13 @@ function DeckFormModal({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                    <label htmlFor={`${fieldPrefix}-description`} className="field-label">Description</label>
+                    <label htmlFor="deck-description" className="field-label">Description</label>
                     <textarea
-                        id={`${fieldPrefix}-description`}
+                        id="deck-description"
                         className="field-input min-h-24 resize-y"
                         value={description}
                         onChange={(event) => onDescriptionChange(event.target.value)}
-                        placeholder={isCreating ? "What will this deck contain?" : undefined}
+                        placeholder="What will this deck contain?"
                         maxLength={500}
                     />
                 </div>
@@ -74,9 +69,7 @@ function DeckFormModal({
                         Cancel
                     </button>
                     <button type="submit" className="btn-primary" disabled={isSubmitting || !isValid}>
-                        {isSubmitting
-                            ? isCreating ? "Creating…" : "Saving…"
-                            : isCreating ? "Create deck" : "Save changes"}
+                        {isSubmitting ? "Creating…" : "Create deck"}
                     </button>
                 </div>
             </form>
