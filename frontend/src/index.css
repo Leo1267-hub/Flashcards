@@ -108,6 +108,12 @@
     dark:focus:ring-brand-500/20;
 }
 
+@utility field-input-error {
+  @apply field-input border-rose-400 focus:border-rose-400 focus:ring-rose-100
+    dark:border-rose-500/70 dark:focus:border-rose-500
+    dark:focus:ring-rose-500/20;
+}
+
 @utility card-surface {
   @apply rounded-2xl border border-slate-200/80 bg-white shadow-[var(--shadow-card)]
     dark:border-slate-800 dark:bg-slate-900;

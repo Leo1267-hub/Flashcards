@@ -3,18 +3,28 @@ import type { FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
 import Navbar from "../components/Navbar";
+import type { Card } from "../types/card";
 import type { Deck } from "../types/deck";
+
+function normalizeFront(value: string) {
+    return value.trim().toLowerCase();
+}
 
 function AddCardPage() {
     const { deckId } = useParams<{ deckId: string }>();
 
     const [deck, setDeck] = useState<Deck | null>(null);
+    const [existingFronts, setExistingFronts] = useState<Set<string>>(new Set());
     const [front, setFront] = useState("");
     const [back, setBack] = useState("");
     const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
-    const isCardValid = front.trim().length > 0 && back.trim().length > 0;
+
+    const trimmedFront = front.trim();
+    const isCardValid = trimmedFront.length > 0 && back.trim().length > 0;
+    const isDuplicateFront =
+        trimmedFront.length > 0 && existingFronts.has(normalizeFront(front));
 
     useEffect(() => {
         async function loadDeck() {
@@ -25,8 +35,14 @@ function AddCardPage() {
             }
 
             try {
-                const deckData = await apiFetch(`/decks/${deckId}`);
+                const [deckData, cardsData]: [Deck, Card[]] = await Promise.all([
+                    apiFetch(`/decks/${deckId}`),
+                    apiFetch(`/decks/${deckId}/cards`),
+                ]);
                 setDeck(deckData);
+                setExistingFronts(
+                    new Set(cardsData.map((card) => normalizeFront(card.front)))
+                );
             } catch {
                 setMessage("Could not load this deck");
             } finally {
@@ -47,13 +63,16 @@ function AddCardPage() {
         setMessage("");
 
         try {
-            await apiFetch(`/decks/${deckId}/cards`, {
+            const createdCard: Card = await apiFetch(`/decks/${deckId}/cards`, {
                 method: "POST",
                 body: JSON.stringify({
                     front: front.trim(),
                     back: back.trim(),
                 }),
             });
+            setExistingFronts((current) =>
+                new Set(current).add(normalizeFront(createdCard.front))
+            );
             setFront("");
             setBack("");
         } catch {
@@ -119,14 +138,25 @@ function AddCardPage() {
                         <label htmlFor="card-front" className="field-label">Front</label>
                         <textarea
                             id="card-front"
-                            className="field-input min-h-24 resize-y"
+                            className={`${isDuplicateFront ? "field-input-error" : "field-input"} min-h-24 resize-y`}
                             value={front}
                             onChange={(event) => setFront(event.target.value)}
                             placeholder="Question or prompt"
                             maxLength={500}
                             required
                             autoFocus
+                            aria-invalid={isDuplicateFront}
+                            aria-describedby={isDuplicateFront ? "card-front-error" : undefined}
                         />
+                        {isDuplicateFront && (
+                            <p
+                                id="card-front-error"
+                                role="alert"
+                                className="text-sm font-medium text-rose-600 dark:text-rose-400"
+                            >
+                                This card already exists in {deck.name}.
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex flex-col gap-1.5">
