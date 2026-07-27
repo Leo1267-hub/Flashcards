@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import type { KeyboardEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
@@ -23,10 +23,26 @@ function DeckPage() {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [saveState, setSaveState] = useState<SaveState>("idle");
+    const [searchQuery, setSearchQuery] = useState('');
 
     const savedDetailsRef = useRef({ name: '', description: '' });
     const saveTimerRef = useRef<number | undefined>(undefined);
     const saveSequenceRef = useRef(0);
+
+    const trimmedQuery = searchQuery.trim();
+    const isSearching = trimmedQuery.length > 0;
+
+    const filteredCards = useMemo(() =>
+    {
+        const query = trimmedQuery.toLowerCase();
+        if (!query) {
+            return cards;
+        }
+        return cards.filter((card) =>
+            card.front.toLowerCase().includes(query) ||
+            card.back.toLowerCase().includes(query)
+        );
+    }, [trimmedQuery, cards]);
 
     useEffect(() => {
         async function loadDeck() {
@@ -265,20 +281,74 @@ function DeckPage() {
                     )}
                 </div>
 
-                <div className="mt-6 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Cards</h2>
-                    <Link to={`/decks/${deck.id}/cards/new`} className="btn-secondary">
-                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>
-                        Add card
-                    </Link>
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                        Cards
+                        {isSearching && (
+                            <span className="ml-2 text-sm font-medium text-slate-400 dark:text-slate-500">
+                                {filteredCards.length} of {cards.length}
+                            </span>
+                        )}
+                    </h2>
+
+                    <div className="flex items-center gap-2">
+                        {cards.length > 0 && (
+                            <div className="relative flex-1 sm:w-64 sm:flex-none">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <circle cx="11" cy="11" r="7" />
+                                    <path d="M20 20l-3.6-3.6" />
+                                </svg>
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(event) => setSearchQuery(event.target.value)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === "Escape") {
+                                            setSearchQuery('');
+                                        }
+                                    }}
+                                    placeholder="Search cards"
+                                    aria-label="Search cards"
+                                    className="field-input pl-9 pr-9"
+                                />
+                                {isSearching && (
+                                    <button
+                                        type="button"
+                                        className="absolute inset-y-0 right-0 grid w-9 place-items-center text-slate-400 transition-colors hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200"
+                                        onClick={() => setSearchQuery('')}
+                                        aria-label="Clear search"
+                                    >
+                                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M18 6L6 18M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        <Link to={`/decks/${deck.id}/cards/new`} className="btn-secondary shrink-0">
+                            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 5v14M5 12h14" />
+                            </svg>
+                            Add card
+                        </Link>
+                    </div>
                 </div>
 
                 <CardList
-                    cards={cards}
+                    cards={filteredCards}
                     deletingCardId={deletingCardId}
                     onDelete={deleteCard}
+                    emptyMessage={isSearching ? `No cards match "${trimmedQuery}".` : undefined}
+                    emptyHint={isSearching ? "Try a different word or clear the search." : undefined}
                 />
 
                 {message && (
