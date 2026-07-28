@@ -7,7 +7,7 @@ import PasswordInput from "../components/PasswordInput";
 import ThemeToggle from "../components/ThemeToggle";
 
 function LoginPage() {
-    const [username, setUsername] = useState(localStorage.getItem('last_username') || '');
+    const [email, setEmail] = useState(localStorage.getItem('last_email') || '');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,15 +21,15 @@ function LoginPage() {
             const data = await apiFetch('/login', {
                 method: 'POST',
                 body: JSON.stringify({
-                    username,
+                    email,
                     password
                 }),
             });
             localStorage.setItem("access_token", data.access_token);
-            localStorage.setItem('last_username', username)
+            localStorage.setItem('last_email', email)
             navigate('/decks')
         } catch {
-            setMessage('Invalid username or password');
+            setMessage('Invalid email or password');
         } finally {
             setIsSubmitting(false);
         }
@@ -52,14 +52,15 @@ function LoginPage() {
 
                 <form onSubmit={login} className="card-surface flex flex-col gap-4 p-6 sm:p-7">
                     <div className="flex flex-col gap-1.5">
-                        <label htmlFor="username" className="field-label">Username</label>
+                        <label htmlFor="email" className="field-label">Email</label>
                         <input
-                            id="username"
+                            id="email"
                             className="field-input"
-                            value={username}
-                            onChange={(event) => setUsername(event.target.value)}
-                            placeholder="yourname"
-                            autoComplete="username"
+                            value={email}
+                            onChange={(event) => setEmail(event.target.value)}
+                            placeholder="you@example.com"
+                            type="email"
+                            autoComplete="email"
                         />
                     </div>
 

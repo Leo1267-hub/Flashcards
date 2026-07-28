@@ -16,11 +16,11 @@ async def signup(credentials: UserCreate,
                 response:Response,
                 db: AsyncSession = Depends(get_db)
                 ):
-    query = select(User).where((User.username == credentials.username) | (User.email == credentials.email))
+    query = select(User).where(User.email == credentials.email)
     result = await db.execute(query)
     user = result.scalar_one_or_none()
     if user:
-        raise HTTPException(400, detail="Username or email already registered")
+        raise HTTPException(400, detail="Email already registered")
 
     hashed_password = hash_password(credentials.password)
     new_user = User(
@@ -31,7 +31,7 @@ async def signup(credentials: UserCreate,
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-    access_token = auth.create_access_token(uid=credentials.username)
+    access_token = auth.create_access_token(uid=str(new_user.id))
     response.set_cookie(key=auth_config.JWT_ACCESS_COOKIE_NAME,
             value=access_token
             )
@@ -45,12 +45,12 @@ async def login(credentials: UserLogin,
                 response:Response,
                 db: AsyncSession = Depends(get_db)
                 ):
-    query = select(User).where(User.username == credentials.username)
+    query = select(User).where(User.email == credentials.email)
     result = await db.execute(query)
     user = result.scalar_one_or_none()
     if user == None or not verify_password(credentials.password,user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    access_token = auth.create_access_token(uid=credentials.username)
+    access_token = auth.create_access_token(uid=str(user.id))
     response.set_cookie(key=auth_config.JWT_ACCESS_COOKIE_NAME,
                         value=access_token
                         )

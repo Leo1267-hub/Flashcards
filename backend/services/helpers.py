@@ -24,10 +24,12 @@ async def get_current_user(
     payload=Depends(auth.access_token_required),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    username = payload.sub
+    try:
+        user_id = int(payload.sub)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    result = await db.execute(select(User).where(User.username == username))
-    user = result.scalar_one_or_none()
+    user = await db.get(User, user_id)
 
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid credentials")

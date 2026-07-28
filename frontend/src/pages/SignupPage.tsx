@@ -28,10 +28,10 @@ function SignupPage() {
                 }),
             });
             localStorage.setItem("access_token", data.access_token);
-            localStorage.setItem('last_username', username)
+            localStorage.setItem('last_email', email)
             navigate('/decks')
         } catch {
-            setMessage('Username or email is already used');
+            setMessage('This email is already used');
         } finally {
             setIsSubmitting(false);
         }
@@ -61,7 +61,7 @@ function SignupPage() {
                             value={username}
                             onChange={(event) => setUsername(event.target.value)}
                             placeholder="yourname"
-                            autoComplete="username"
+                            autoComplete="nickname"
                         />
                     </div>
 

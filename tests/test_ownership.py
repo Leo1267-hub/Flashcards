@@ -47,3 +47,19 @@ async def test_user_cannot_access_another_users_deck_or_card(auth_ac):
 
     assert card_response.status_code == 404
     assert card_response.json() == {"detail": "Card not found"}
+
+
+@pytest.mark.asyncio
+async def test_users_sharing_a_username_keep_separate_decks(auth_ac):
+    await create_deck(auth_ac)
+
+    await authenticate_as(
+        auth_ac,
+        username="testuser",
+        email="twin@example.com",
+    )
+
+    decks_response = await auth_ac.get("/decks")
+
+    assert decks_response.status_code == 200
+    assert decks_response.json() == []
