@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
+import { uploadCardImage } from "../cardImages";
+import CardImageInput from "../components/CardImageInput";
 import Navbar from "../components/Navbar";
 import type { Card } from "../types/card";
 import type { Deck } from "../types/deck";
@@ -17,6 +19,8 @@ function AddCardPage() {
     const [existingFronts, setExistingFronts] = useState<Set<string>>(new Set());
     const [front, setFront] = useState("");
     const [back, setBack] = useState("");
+    const [frontFile, setFrontFile] = useState<File | null>(null);
+    const [backFile, setBackFile] = useState<File | null>(null);
     const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
@@ -62,24 +66,41 @@ function AddCardPage() {
         setIsCreating(true);
         setMessage("");
 
+        let createdCard: Card;
+
         try {
-            const createdCard: Card = await apiFetch(`/decks/${deckId}/cards`, {
+            createdCard = await apiFetch(`/decks/${deckId}/cards`, {
                 method: "POST",
                 body: JSON.stringify({
                     front: front.trim(),
                     back: back.trim(),
                 }),
             });
-            setExistingFronts((current) =>
-                new Set(current).add(normalizeFront(createdCard.front))
-            );
-            setFront("");
-            setBack("");
         } catch {
             setMessage("Could not create the card");
-        } finally {
             setIsCreating(false);
+            return;
         }
+
+        try {
+            if (frontFile) {
+                await uploadCardImage(createdCard.id, "front", frontFile);
+            }
+            if (backFile) {
+                await uploadCardImage(createdCard.id, "back", backFile);
+            }
+        } catch {
+            setMessage("Card created, but its image could not be uploaded");
+        }
+
+        setExistingFronts((current) =>
+            new Set(current).add(normalizeFront(createdCard.front))
+        );
+        setFront("");
+        setBack("");
+        setFrontFile(null);
+        setBackFile(null);
+        setIsCreating(false);
     }
 
     if (isLoading) {
@@ -159,6 +180,16 @@ function AddCardPage() {
                         )}
                     </div>
 
+                    <CardImageInput
+                        id="card-front-image"
+                        label="Front image"
+                        file={frontFile}
+                        existingUrl={null}
+                        onFileSelect={setFrontFile}
+                        onRemove={() => setFrontFile(null)}
+                        disabled={isCreating}
+                    />
+
                     <div className="flex flex-col gap-1.5">
                         <label htmlFor="card-back" className="field-label">Back</label>
                         <textarea
@@ -171,6 +202,16 @@ function AddCardPage() {
                             required
                         />
                     </div>
+
+                    <CardImageInput
+                        id="card-back-image"
+                        label="Back image"
+                        file={backFile}
+                        existingUrl={null}
+                        onFileSelect={setBackFile}
+                        onRemove={() => setBackFile(null)}
+                        disabled={isCreating}
+                    />
 
                     {message && (
                         <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">

@@ -24,6 +24,8 @@ async def test_create_card(auth_ac):
         "difficulty": None,
         "due": data["due"],
         "last_review": None,
+        "front_image_url": None,
+        "back_image_url": None,
     }
     assert isinstance(data["id"], int)
 

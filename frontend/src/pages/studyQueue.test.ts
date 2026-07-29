@@ -14,6 +14,8 @@ function makeCard(id: number): Card {
         deck_id: 1,
         front: `Card ${id}`,
         back: `Answer ${id}`,
+        front_image_url: null,
+        back_image_url: null,
         fsrs_state: 2,
         fsrs_step: null,
         stability: null,

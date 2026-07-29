@@ -15,6 +15,13 @@ function CardListItem({ card, isDeleting, onDelete }: CardListItemProps) {
                     Front
                 </p>
                 <p className="text-sm font-medium wrap-break-word text-slate-900 dark:text-slate-100">{card.front}</p>
+                {card.front_image_url && (
+                    <img
+                        src={card.front_image_url}
+                        alt=""
+                        className="mt-2 h-16 w-16 rounded-lg border border-slate-200 object-cover dark:border-slate-700"
+                    />
+                )}
             </div>
 
             <div className="min-w-0 border-t border-slate-100 pt-3 dark:border-slate-800 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
@@ -22,6 +29,13 @@ function CardListItem({ card, isDeleting, onDelete }: CardListItemProps) {
                     Back
                 </p>
                 <p className="text-sm wrap-break-word text-slate-600 dark:text-slate-300">{card.back}</p>
+                {card.back_image_url && (
+                    <img
+                        src={card.back_image_url}
+                        alt=""
+                        className="mt-2 h-16 w-16 rounded-lg border border-slate-200 object-cover dark:border-slate-700"
+                    />
+                )}
             </div>
 
             <div className="flex items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
@@ -7,6 +7,7 @@ from backend.models import Card, ReviewEvent
 from backend.schemas.cards import (
     CardCreate,
     CardResponse,
+    CardSide,
     CardUpdate,
     CardReview,
     CardReviewOptions,
@@ -20,6 +21,7 @@ from backend.services.fsrs_service import (
     to_fsrs_card,
     get_review_options,
 )
+from backend.services.storage import delete_image, delete_images, save_card_image
 
 router = APIRouter(tags=["Cards"])
 
@@ -92,10 +94,57 @@ async def update_card(
 @router.delete("/cards/{card_id}", status_code=204)
 async def delete_card(card_id: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     card = await check_card(card_id, db, current_user)
+    image_keys = [card.front_image_key, card.back_image_key]
     await db.delete(card)
     await db.commit()
-    
-    
+    await delete_images(image_keys)
+
+
+@router.put("/cards/{card_id}/images/{side}", response_model=CardResponse)
+async def upload_card_image(
+    card_id: int,
+    side: CardSide,
+    image: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    card = await check_card(card_id, db, current_user)
+    field = f"{side.value}_image_key"
+    previous_key = getattr(card, field)
+
+    setattr(card, field, await save_card_image(image, current_user.id))
+
+    await db.commit()
+    await db.refresh(card)
+    await delete_image(previous_key)
+
+    return card
+
+
+@router.delete("/cards/{card_id}/images/{side}", response_model=CardResponse)
+async def delete_card_image(
+    card_id: int,
+    side: CardSide,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    card = await check_card(card_id, db, current_user)
+    field = f"{side.value}_image_key"
+    previous_key = getattr(card, field)
+
+    if previous_key is None:
+        return card
+
+    setattr(card, field, None)
+
+    await db.commit()
+    await db.refresh(card)
+    await delete_image(previous_key)
+
+    return card
+
+
+
 
 @router.post("/cards/{card_id}/review", response_model=CardReviewResponse)
 async def review_card(

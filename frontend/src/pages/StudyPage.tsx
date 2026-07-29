@@ -586,6 +586,13 @@ function StudyPage() {
                             <p className="max-w-full text-balance wrap-break-word text-2xl font-semibold leading-snug text-slate-900 dark:text-slate-100 sm:text-3xl">
                                 {currentCard.front}
                             </p>
+                            {currentCard.front_image_url && (
+                                <img
+                                    src={currentCard.front_image_url}
+                                    alt="Question image"
+                                    className="max-h-56 max-w-full rounded-xl object-contain"
+                                />
+                            )}
                         </div>
 
                         <div className="flip-face flip-face--back card-surface flex min-h-72 flex-col items-center justify-center gap-4 bg-gradient-to-br from-white to-brand-50 dark:from-slate-900 dark:to-slate-800 px-6 py-12 text-center sm:px-10">
@@ -595,6 +602,13 @@ function StudyPage() {
                             <p className="max-w-full text-balance wrap-break-word text-2xl font-semibold leading-snug text-slate-900 dark:text-slate-100 sm:text-3xl">
                                 {currentCard.back}
                             </p>
+                            {currentCard.back_image_url && (
+                                <img
+                                    src={currentCard.back_image_url}
+                                    alt="Answer image"
+                                    className="max-h-56 max-w-full rounded-xl object-contain"
+                                />
+                            )}
                         </div>
                     </div>
                 </div>

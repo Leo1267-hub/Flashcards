@@ -2,9 +2,18 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
+import { deleteCardImage, uploadCardImage } from "../cardImages";
+import CardImageInput from "../components/CardImageInput";
 import Navbar from "../components/Navbar";
-import type { Card } from "../types/card";
+import type { Card, CardSide } from "../types/card";
 import type { Deck } from "../types/deck";
+
+type ImageEdit = {
+    file: File | null;
+    isRemoved: boolean;
+};
+
+const NO_IMAGE_EDIT: ImageEdit = { file: null, isRemoved: false };
 
 function EditCardPage() {
     const { deckId, cardId } = useParams<{ deckId: string; cardId: string }>();
@@ -13,6 +22,10 @@ function EditCardPage() {
     const [deck, setDeck] = useState<Deck | null>(null);
     const [front, setFront] = useState("");
     const [back, setBack] = useState("");
+    const [frontImageUrl, setFrontImageUrl] = useState<string | null>(null);
+    const [backImageUrl, setBackImageUrl] = useState<string | null>(null);
+    const [frontImageEdit, setFrontImageEdit] = useState<ImageEdit>(NO_IMAGE_EDIT);
+    const [backImageEdit, setBackImageEdit] = useState<ImageEdit>(NO_IMAGE_EDIT);
     const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -40,6 +53,8 @@ function EditCardPage() {
                 setDeck(deckData);
                 setFront(cardData.front);
                 setBack(cardData.back);
+                setFrontImageUrl(cardData.front_image_url);
+                setBackImageUrl(cardData.back_image_url);
             } catch {
                 setMessage("Could not load this card");
             } finally {
@@ -49,6 +64,17 @@ function EditCardPage() {
 
         loadCard();
     }, [deckId, cardId]);
+
+    async function applyImageEdit(side: CardSide, edit: ImageEdit) {
+        if (edit.file) {
+            await uploadCardImage(Number(cardId), side, edit.file);
+            return;
+        }
+
+        if (edit.isRemoved) {
+            await deleteCardImage(Number(cardId), side);
+        }
+    }
 
     async function updateCard(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -67,6 +93,8 @@ function EditCardPage() {
                     back: back.trim(),
                 }),
             });
+            await applyImageEdit("front", frontImageEdit);
+            await applyImageEdit("back", backImageEdit);
             navigate(`/decks/${deckId}`);
         } catch {
             setMessage("Could not update the card");
@@ -140,6 +168,16 @@ function EditCardPage() {
                         />
                     </div>
 
+                    <CardImageInput
+                        id="edit-card-front-image"
+                        label="Front image"
+                        file={frontImageEdit.file}
+                        existingUrl={frontImageEdit.isRemoved ? null : frontImageUrl}
+                        onFileSelect={(file) => setFrontImageEdit({ file, isRemoved: false })}
+                        onRemove={() => setFrontImageEdit({ file: null, isRemoved: true })}
+                        disabled={isUpdating}
+                    />
+
                     <div className="flex flex-col gap-1.5">
                         <label htmlFor="edit-card-back" className="field-label">Back</label>
                         <textarea
@@ -151,6 +189,16 @@ function EditCardPage() {
                             required
                         />
                     </div>
+
+                    <CardImageInput
+                        id="edit-card-back-image"
+                        label="Back image"
+                        file={backImageEdit.file}
+                        existingUrl={backImageEdit.isRemoved ? null : backImageUrl}
+                        onFileSelect={(file) => setBackImageEdit({ file, isRemoved: false })}
+                        onRemove={() => setBackImageEdit({ file: null, isRemoved: true })}
+                        disabled={isUpdating}
+                    />
 
                     {message && (
                         <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">

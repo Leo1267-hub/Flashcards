@@ -11,6 +11,7 @@ A spaced-repetition flashcard application built with FastAPI and React. Reviews 
 - **Learn-ahead queue** — cards in the learning and relearning states are re-shown within the session instead of disappearing until tomorrow.
 - **Undo and redo** — every review is stored as an immutable event, so the last review can be rolled back (and re-applied) without corrupting the schedule.
 - **Deck and card management** — create decks, edit names and descriptions inline, and add, update, or delete cards.
+- **Optional card images** — attach one image to the front and one to the back of a card. Files are stored on disk and the database only keeps a stable key such as `users/7/cards/<uuid>.webp`; deleting a card or deck removes its files.
 - **Authentication and ownership** — JWT auth with Argon2 password hashing; every deck and card is scoped to its owner.
 - **Keyboard-first study** — `Space` reveals the answer, `1`–`4` rate the card, `Cmd/Ctrl+Z` and `Cmd/Ctrl+Shift+Z` undo and redo.
 
@@ -63,6 +64,8 @@ python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 | `DATABASE_URL` | Async PostgreSQL DSN for the application database. |
 | `TEST_DATABASE_URL` | DSN for the test database, created automatically by the container's init script. |
 | `JWT_SECRET_KEY` | Secret used to sign access tokens. Use a unique value per environment. |
+| `MEDIA_ROOT` | Optional. Directory holding uploaded card images. Defaults to `./media`. |
+| `MEDIA_BASE_URL` | Optional. Base URL the API prefixes onto image keys when building response URLs. Defaults to `http://localhost:8000/media`. |
 
 The defaults in `.env.example` match the Docker Compose service, which publishes Postgres on host port `5433`.
 
@@ -111,6 +114,7 @@ Backend tests run against `TEST_DATABASE_URL` and manage their own schema, so th
 | `GET` `POST` | `/decks/{deck_id}/cards` | List or create cards in a deck. |
 | `GET` | `/decks/{deck_id}/study-cards` | Cards due now, including learn-ahead candidates. |
 | `GET` `PATCH` `DELETE` | `/cards/{card_id}` | Read, update, or delete a card. |
+| `PUT` `DELETE` | `/cards/{card_id}/images/{side}` | Upload (multipart `image`) or remove the image on `front` or `back`. |
 | `GET` | `/cards/{card_id}/review-options` | Projected due date and interval for each rating. |
 | `POST` | `/cards/{card_id}/review` | Submit a rating (1–4) and advance the schedule. |
 | `POST` | `/reviews/{review_id}/undo`, `/redo` | Roll back or re-apply the latest review for a card. |
@@ -123,14 +127,16 @@ backend/
   models.py          SQLAlchemy models (User, Deck, Card, ReviewEvent)
   routes/            auth, decks, and cards endpoints
   schemas/           Pydantic request and response models
-  services/          FSRS scheduling, auth helpers, password hashing
+  services/          FSRS scheduling, image storage, auth helpers, hashing
 frontend/src/
   pages/             route-level screens, including the study session
   components/        reusable UI (modals, navbar, theme toggle)
   api.ts             fetch wrapper that attaches the access token
+  cardImages.ts      card image upload and removal requests
 migrations/          Alembic revisions
 tests/               pytest suites for auth, decks, and cards
 docker/init/         database bootstrap SQL
+media/               uploaded card images (git-ignored)
 ```
 
 ## How scheduling works
@@ -138,4 +144,10 @@ docker/init/         database bootstrap SQL
 A card stores its FSRS state (`fsrs_state`, `fsrs_step`, `stability`, `difficulty`, `due`, `last_review`). When you rate a card, the backend asks FSRS for the next state, writes a `ReviewEvent` capturing the full before and after snapshot, and then applies the new values to the card. Undo restores the `before_*` fields and marks the event as undone; redo re-applies the `after_*` fields. Only the most recent review for a card can be undone or redone, which keeps the event log linear.
 
 Cards in the learning or relearning state count as due up to 20 minutes early. This learn-ahead window exists on both sides: the API includes them in `/study-cards`, and the frontend queue in `frontend/src/pages/studyQueue.ts` re-inserts them into the session rather than ending it early.
+
+## How card images work
+
+Text is required on both sides of a card; images are optional extras. Uploads go to `PUT /cards/{card_id}/images/{side}` as multipart form data. The backend ignores the submitted filename and content type, detects the real format from the file's magic bytes, rejects anything that is not a JPEG, PNG, WebP, or GIF, caps uploads at 5 MB, and writes the file to `MEDIA_ROOT/users/{user_id}/cards/{uuid}.{ext}`.
+
+Postgres stores only that key in `cards.front_image_key` / `cards.back_image_key` — never image bytes, Base64, or a pre-built URL. Responses expose `front_image_url` and `back_image_url`, which are generated from the key at serialization time, so the storage location can change without a data migration. Replacing an image, removing one, deleting a card, and deleting a deck all delete the underlying files.
 

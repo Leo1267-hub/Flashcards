@@ -6,6 +6,7 @@ from backend.database import get_db
 from backend.models import Card, Deck
 from backend.schemas.decks import DeckCreate, DeckUpdate, DeckSummaryResponse
 from backend.services.helpers import check_deck, get_current_user
+from backend.services.storage import delete_images
 
 router = APIRouter(prefix="/decks", tags=["Decks"])
 
@@ -77,5 +78,11 @@ async def update_deck(
 @router.delete("/{deck_id}", status_code=204)
 async def delete_deck(deck_id: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     deck = await check_deck(deck_id, db, current_user)
+    image_keys = [
+        key
+        for card in deck.cards
+        for key in (card.front_image_key, card.back_image_key)
+    ]
     await db.delete(deck)
     await db.commit()
+    await delete_images(image_keys)

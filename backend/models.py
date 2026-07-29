@@ -53,6 +53,17 @@ class Card(Base):
                                          )
     front: Mapped[str] = mapped_column(Text, nullable=False)
     back: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Storage keys such as users/7/cards/<uuid>.webp, never image bytes.
+    front_image_key: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    back_image_key: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
     fsrs_state: Mapped[int] = mapped_column(
     Integer,
     nullable=False,

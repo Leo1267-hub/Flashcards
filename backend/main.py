@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from backend.routes.cards import router as cards_router
 from backend.routes.decks import router as decks_router
 from backend.routes.auth import router as auth_router
+from backend.services.storage import MEDIA_ROOT, MEDIA_URL_PATH
 
 app = FastAPI()
 app.add_middleware(
@@ -17,6 +19,9 @@ app.add_middleware(
 app.include_router(decks_router)
 app.include_router(cards_router)
 app.include_router(auth_router)
+
+MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+app.mount(MEDIA_URL_PATH, StaticFiles(directory=MEDIA_ROOT), name="media")
 
 
 @app.get("/", tags=["Root"])

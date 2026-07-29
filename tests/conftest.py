@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, text
 from backend.main import app
 from backend.database import get_db
 from backend.config import settings
+from backend.services import storage
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 TEST_DATABASE_URL = settings.test_database_url
@@ -50,6 +51,13 @@ def clean_test_db(migrated_test_db):
         )
 
     reset_engine.dispose()
+
+@pytest.fixture(autouse=True)
+def media_root(tmp_path, monkeypatch):
+    root = tmp_path / "media"
+    root.mkdir()
+    monkeypatch.setattr(storage, "MEDIA_ROOT", root)
+    return root
 
 async def override_get_db():
     async with TestSessionLocal() as db:
