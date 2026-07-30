@@ -4,7 +4,6 @@ import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
 import type { ReviewOptions, Rating } from "../types/rating";
 import { getNextCard, type LearningQueueItem } from "./studyQueue";
-import Navbar from "../components/Navbar";
 
 const FSRS_LEARNING = 1;
 const FSRS_RELEARNING = 3;
@@ -434,75 +433,59 @@ function StudyPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-svh">
-                <Navbar />
-                <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-24 sm:px-6">
-                    <div className="h-72 w-full animate-pulse rounded-3xl bg-slate-100 dark:bg-slate-800/60" />
-                </main>
-            </div>
+            <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-24 sm:px-6">
+                <div className="h-72 w-full animate-pulse rounded-3xl bg-slate-100 dark:bg-slate-800/60" />
+            </main>
         );
     }
     if (message) {
         return (
-            <div className="min-h-svh">
-                <Navbar />
-                <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-20 text-center sm:px-6">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{message}</p>
-                    <div className="mt-5 flex items-center gap-3">
-                        {undoButton}
-                        {redoButton}
-                        <Link to="/decks" className="btn-secondary">Back to decks</Link>
-                    </div>
-                </main>
-            </div>
+            <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-20 text-center sm:px-6">
+                <p className="text-sm text-slate-500 dark:text-slate-400">{message}</p>
+                <div className="mt-5 flex items-center gap-3">
+                    {undoButton}
+                    {redoButton}
+                    <Link to="/decks" className="btn-secondary">Back to decks</Link>
+                </div>
+            </main>
         );
     }
     if (isFinished) {
         return (
-            <div className="min-h-svh">
-                <Navbar
-                    right={
-                        <div className="flex items-center gap-2">
-                            {undoButton}
-                            {redoButton}
-                        </div>
-                    }
-                />
-                <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-20 text-center sm:px-6">
-                    <div className="grid h-16 w-16 place-items-center rounded-2xl bg-emerald-50 text-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-400">
-                        <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20 6L9 17l-5-5" />
-                        </svg>
-                    </div>
-                    <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Study complete</h1>
-                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                        You reviewed every due card in this deck. Great job!
-                    </p>
-                    <div className="mt-6 flex items-center gap-3">
-                        <button
-                            type="button"
-                            className="btn-secondary"
-                            onClick={() => void undoLastReview()}
-                            disabled={!canUndo || historyBusy}
-                        >
-                            {undoIcon}
-                            {isUndoing ? "Undoing…" : "Undo last review"}
-                        </button>
-                        <button
-                            type="button"
-                            className="btn-secondary"
-                            onClick={() => void redoLastReview()}
-                            disabled={!canRedo || historyBusy}
-                        >
-                            {redoIcon}
-                            {isRedoing ? "Redoing…" : "Redo"}
-                        </button>
-                        <Link to={`/decks/${deckId}`} className="btn-primary">
-                            Back to deck
-                        </Link>
-                    </div>
-                </main>
-            </div>
+            <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-20 text-center sm:px-6">
+                <div className="grid h-16 w-16 place-items-center rounded-2xl bg-emerald-50 text-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-400">
+                    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                </div>
+                <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Study complete</h1>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                    You reviewed every due card in this deck. Great job!
+                </p>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                    <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => void undoLastReview()}
+                        disabled={!canUndo || historyBusy}
+                    >
+                        {undoIcon}
+                        {isUndoing ? "Undoing…" : "Undo last review"}
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => void redoLastReview()}
+                        disabled={!canRedo || historyBusy}
+                    >
+                        {redoIcon}
+                        {isRedoing ? "Redoing…" : "Redo"}
+                    </button>
+                    <Link to={`/decks/${deckId}`} className="btn-primary">
+                        Back to deck
+                    </Link>
+                </div>
+            </main>
         );
     }
 
@@ -512,18 +495,15 @@ function StudyPage() {
         learningQueue.length === 0
     ) {
         return (
-            <div className="min-h-svh">
-                <Navbar />
-                <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-20 text-center sm:px-6">
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Nothing to study</h1>
-                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                        This deck has no available cards to study yet.
-                    </p>
-                    <Link to={`/decks/${deckId}`} className="btn-secondary mt-6">
-                        Back to deck
-                    </Link>
-                </main>
-            </div>
+            <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-20 text-center sm:px-6">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Nothing to study</h1>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                    This deck has no available cards to study yet.
+                </p>
+                <Link to={`/decks/${deckId}`} className="btn-secondary mt-6">
+                    Back to deck
+                </Link>
+            </main>
         );
     }
     if (!currentCard) {
@@ -549,23 +529,15 @@ function StudyPage() {
         : [];
 
     return (
-        <div className="min-h-svh">
-            <Navbar
-                right={
-                    <div className="flex items-center gap-2">
-                        {undoButton}
-                        {redoButton}
-                        <Link
-                            to={`/decks/${deckId}`}
-                            className="btn-ghost"
-                        >
-                            Exit
-                        </Link>
-                    </div>
-                }
-            />
+        <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10">
+                <div className="mb-6 flex flex-wrap items-center justify-end gap-2">
+                    {undoButton}
+                    {redoButton}
+                    <Link to={`/decks/${deckId}`} className="btn-ghost">
+                        Exit
+                    </Link>
+                </div>
 
-            <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10">
                 <div className="flex items-center justify-between text-sm font-medium text-slate-500 dark:text-slate-400">
                     <span>Progress</span>
                     <span>{remaining} left</span>
@@ -657,8 +629,7 @@ function StudyPage() {
                         </div>
                     )}
                 </div>
-            </main>
-        </div>
+        </main>
     );
 }
 

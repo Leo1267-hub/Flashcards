@@ -1,11 +1,3 @@
-import { Link } from "react-router-dom";
-import type { ReactNode } from "react";
-import ThemeToggle from "./ThemeToggle";
-
-type NavbarProps = {
-    right?: ReactNode;
-};
-
 export function BrandMark({ className = "" }: { className?: string }) {
     return (
         <span className={`inline-flex items-center gap-2.5 ${className}`}>
@@ -30,21 +22,3 @@ export function BrandMark({ className = "" }: { className?: string }) {
         </span>
     );
 }
-
-function Navbar({ right }: NavbarProps) {
-    return (
-        <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/70 backdrop-blur-lg dark:border-slate-800/70 dark:bg-slate-950/60">
-            <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
-                <Link to="/decks" className="transition-opacity hover:opacity-80">
-                    <BrandMark />
-                </Link>
-                <div className="flex items-center gap-2">
-                    {right}
-                    <ThemeToggle />
-                </div>
-            </div>
-        </header>
-    );
-}
-
-export default Navbar;

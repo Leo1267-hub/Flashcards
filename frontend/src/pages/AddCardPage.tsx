@@ -4,7 +4,6 @@ import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
 import { uploadCardImage } from "../cardImages";
 import CardImageInput from "../components/CardImageInput";
-import Navbar from "../components/Navbar";
 import type { Card } from "../types/card";
 import type { Deck } from "../types/deck";
 
@@ -105,35 +104,26 @@ function AddCardPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-svh">
-                <Navbar />
-                <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-                    <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
-                    <div className="mt-8 h-64 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800/60" />
-                </main>
-            </div>
+            <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+                <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
+                <div className="mt-8 h-64 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800/60" />
+            </main>
         );
     }
 
     if (!deck) {
         return (
-            <div className="min-h-svh">
-                <Navbar />
-                <main className="mx-auto flex max-w-4xl flex-col items-center px-4 py-20 text-center sm:px-6">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{message || "Deck not found"}</p>
-                    <Link to="/decks" className="btn-secondary mt-5">
-                        Back to decks
-                    </Link>
-                </main>
-            </div>
+            <main className="mx-auto flex max-w-4xl flex-col items-center px-4 py-20 text-center sm:px-6">
+                <p className="text-sm text-slate-500 dark:text-slate-400">{message || "Deck not found"}</p>
+                <Link to="/decks" className="btn-secondary mt-5">
+                    Back to decks
+                </Link>
+            </main>
         );
     }
 
     return (
-        <div className="min-h-svh">
-            <Navbar />
-
-            <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+        <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
                 <Link
                     to={`/decks/${deck.id}`}
                     className="inline-flex max-w-full items-center gap-2 text-base font-medium text-slate-500 transition-colors hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400"
@@ -228,8 +218,7 @@ function AddCardPage() {
                         </button>
                     </div>
                 </form>
-            </main>
-        </div>
+        </main>
     );
 }
 

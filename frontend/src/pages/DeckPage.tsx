@@ -4,7 +4,6 @@ import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
 import CardList from "../components/CardList";
 import InlineEditableText from "../components/InlineEditableText";
-import Navbar from "../components/Navbar";
 import type { Card } from "../types/card";
 import type { Deck } from "../types/deck";
 
@@ -173,47 +172,30 @@ function DeckPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-svh">
-                <Navbar />
-                <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-                    <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
-                    <div className="mt-3 h-4 w-72 animate-pulse rounded bg-slate-100 dark:bg-slate-800/60" />
-                    <div className="mt-8 flex flex-col gap-3">
-                        <div className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800/60" />
-                        <div className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800/60" />
-                    </div>
-                </main>
-            </div>
+            <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+                <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
+                <div className="mt-3 h-4 w-72 animate-pulse rounded bg-slate-100 dark:bg-slate-800/60" />
+                <div className="mt-8 flex flex-col gap-3">
+                    <div className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800/60" />
+                    <div className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800/60" />
+                </div>
+            </main>
         );
     }
 
     if (!deck) {
         return (
-            <div className="min-h-svh">
-                <Navbar />
-                <main className="mx-auto flex max-w-4xl flex-col items-center px-4 py-20 text-center sm:px-6">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{message || "Deck not found"}</p>
-                    <Link to="/decks" className="btn-secondary mt-5">
-                        Back to decks
-                    </Link>
-                </main>
-            </div>
+            <main className="mx-auto flex max-w-4xl flex-col items-center px-4 py-20 text-center sm:px-6">
+                <p className="text-sm text-slate-500 dark:text-slate-400">{message || "Deck not found"}</p>
+                <Link to="/decks" className="btn-secondary mt-5">
+                    Back to decks
+                </Link>
+            </main>
         );
     }
 
     return (
-        <div className="min-h-svh">
-            <Navbar
-                right={
-                    cards.length > 0 && (
-                        <Link to={`/decks/${deck.id}/study`} className="btn-primary">
-                            Study deck
-                        </Link>
-                    )
-                }
-            />
-
-            <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+        <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
                 <Link
                     to="/decks"
                     className="inline-flex items-center gap-2 text-base font-medium text-slate-500 transition-colors hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400"
@@ -356,8 +338,7 @@ function DeckPage() {
                         {message}
                     </p>
                 )}
-            </main>
-        </div>
+        </main>
     );
 }
 

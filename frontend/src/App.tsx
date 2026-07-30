@@ -7,19 +7,24 @@ import DeckPage from "./pages/DeckPage";
 import AddCardPage from "./pages/AddCardPage";
 import EditCardPage from "./pages/EditCardPage";
 import StudyPage from "./pages/StudyPage";
+import StatisticsPage from "./pages/StatisticsPage";
+import AppLayout from "./components/AppLayout";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/decks/:deckId" element={<DeckPage />} />
         <Route path="/" element={<Navigate to="/decks" />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/decks" element={<DecksPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        <Route path="/decks/:deckId/cards/new" element={<AddCardPage />} />
-        <Route path="/decks/:deckId/cards/:cardId/edit" element={<EditCardPage />} />
-        <Route path="/decks/:deckId/study" element={<StudyPage />} />
+        <Route element={<AppLayout />}>
+          <Route path="/decks" element={<DecksPage />} />
+          <Route path="/statistics" element={<StatisticsPage />} />
+          <Route path="/decks/:deckId" element={<DeckPage />} />
+          <Route path="/decks/:deckId/cards/new" element={<AddCardPage />} />
+          <Route path="/decks/:deckId/cards/:cardId/edit" element={<EditCardPage />} />
+          <Route path="/decks/:deckId/study" element={<StudyPage />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
