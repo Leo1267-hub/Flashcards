@@ -105,3 +105,22 @@ async def test_login_fails_with_unknown_email(ac):
     assert response.status_code == 401
     assert response.json() == {"detail": "Invalid credentials"}
 
+
+@pytest.mark.asyncio
+async def test_me_returns_current_user(auth_ac):
+    response = await auth_ac.get("/me")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 1,
+        "username": "testuser",
+        "email": "test@example.com",
+    }
+
+
+@pytest.mark.asyncio
+async def test_me_requires_login(ac):
+    response = await ac.get("/me")
+
+    assert response.status_code == 401
+

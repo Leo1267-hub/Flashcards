@@ -9,3 +9,11 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: str = Field(min_length=5, max_length=100)
     password: str = Field(min_length=8, max_length=100)
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+    email: str

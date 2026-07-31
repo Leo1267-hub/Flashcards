@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends,HTTPException, Response
 from backend.auth import auth, auth_config
-from backend.schemas.auth import UserCreate,UserLogin
+from backend.schemas.auth import UserCreate, UserLogin, UserOut
 from backend.database import get_db
 from backend.models import User
 from sqlalchemy.ext.asyncio import AsyncSession
+from backend.services.helpers import get_current_user
 from backend.services.security import hash_password, verify_password
 from sqlalchemy import select
 
@@ -69,7 +70,7 @@ async def logout(response:Response):
 def protected():
     return {"message": "Hello World"}
 
-@router.get("/me")
-async def me(payload=Depends(auth.access_token_required)):
-    return payload
-    
+@router.get("/me", response_model=UserOut)
+async def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
