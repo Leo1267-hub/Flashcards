@@ -1,4 +1,5 @@
 import { apiFetch } from "../api";
+import { getFieldErrors, getFormError, type FieldErrors } from "../authErrors";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -7,33 +8,40 @@ import PasswordInput from "../components/PasswordInput";
 import ThemeToggle from "../components/ThemeToggle";
 
 function LoginPage() {
-    const [email, setEmail] = useState(localStorage.getItem('last_email') || '');
-    const [password, setPassword] = useState('');
-    const [message, setMessage] = useState('');
+    const [email, setEmail] = useState(localStorage.getItem("last_email") || "");
+    const [password, setPassword] = useState("");
+    const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+    const [message, setMessage] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const navigate = useNavigate();
+
     async function login(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setIsSubmitting(true);
-        setMessage('');
+        setMessage("");
+        setFieldErrors({});
+
         try {
-            const data = await apiFetch('/login', {
-                method: 'POST',
+            const data = await apiFetch("/login", {
+                method: "POST",
                 body: JSON.stringify({
                     email,
-                    password
+                    password,
                 }),
             });
             localStorage.setItem("access_token", data.access_token);
-            localStorage.setItem('last_email', email)
-            navigate('/decks')
-        } catch {
-            setMessage('Invalid email or password');
+            localStorage.setItem("last_email", email);
+            navigate("/decks");
+        } catch (error) {
+            const nextFieldErrors = getFieldErrors(error);
+            setFieldErrors(nextFieldErrors);
+            setMessage(getFormError(error, "Invalid email or password"));
         } finally {
             setIsSubmitting(false);
         }
     }
+
     return (
         <main className="flex min-h-svh flex-col items-center justify-center px-4 py-12">
             <div className="absolute right-4 top-4">
@@ -50,18 +58,29 @@ function LoginPage() {
                     </p>
                 </div>
 
-                <form onSubmit={login} className="card-surface flex flex-col gap-4 p-6 sm:p-7">
+                <form onSubmit={login} className="card-surface flex flex-col gap-4 p-6 sm:p-7" noValidate>
                     <div className="flex flex-col gap-1.5">
                         <label htmlFor="email" className="field-label">Email</label>
                         <input
                             id="email"
-                            className="field-input"
+                            className={fieldErrors.email ? "field-input-error" : "field-input"}
                             value={email}
-                            onChange={(event) => setEmail(event.target.value)}
+                            onChange={(event) => {
+                                setEmail(event.target.value);
+                                setFieldErrors((current) => ({ ...current, email: "" }));
+                            }}
                             placeholder="you@example.com"
                             type="email"
                             autoComplete="email"
+                            maxLength={100}
+                            aria-invalid={Boolean(fieldErrors.email)}
+                            required
                         />
+                        {fieldErrors.email && (
+                            <p role="alert" className="text-sm font-medium text-rose-600 dark:text-rose-400">
+                                {fieldErrors.email}
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex flex-col gap-1.5">
@@ -69,9 +88,19 @@ function LoginPage() {
                         <PasswordInput
                             id="password"
                             value={password}
-                            onChange={(event) => setPassword(event.target.value)}
+                            onChange={(event) => {
+                                setPassword(event.target.value);
+                                setFieldErrors((current) => ({ ...current, password: "" }));
+                            }}
                             autoComplete="current-password"
+                            maxLength={100}
+                            invalid={Boolean(fieldErrors.password)}
                         />
+                        {fieldErrors.password && (
+                            <p role="alert" className="text-sm font-medium text-rose-600 dark:text-rose-400">
+                                {fieldErrors.password}
+                            </p>
+                        )}
                     </div>
 
                     {message && (
@@ -81,12 +110,12 @@ function LoginPage() {
                     )}
 
                     <button type="submit" className="btn-primary mt-1 w-full" disabled={isSubmitting}>
-                        {isSubmitting ? 'Signing in…' : 'Log in'}
+                        {isSubmitting ? "Signing in…" : "Log in"}
                     </button>
                 </form>
 
                 <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                    Don&apos;t have an account?{' '}
+                    Don&apos;t have an account?{" "}
                     <Link to="/signup" className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300">
                         Sign up
                     </Link>

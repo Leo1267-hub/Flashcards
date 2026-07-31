@@ -124,3 +124,44 @@ async def test_me_requires_login(ac):
 
     assert response.status_code == 401
 
+
+@pytest.mark.asyncio
+async def test_signup_rejects_short_username(ac):
+    response = await signup(ac, username="ab")
+
+    assert response.status_code == 422
+    assert any(
+        error["loc"][-1] == "username" and error["type"] == "string_too_short"
+        for error in response.json()["detail"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_signup_rejects_long_username(ac):
+    response = await signup(ac, username="a" * 51)
+
+    assert response.status_code == 422
+    assert any(
+        error["loc"][-1] == "username" and error["type"] == "string_too_long"
+        for error in response.json()["detail"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_signup_rejects_invalid_email(ac):
+    response = await signup(ac, email="not-an-email")
+
+    assert response.status_code == 422
+    assert any(error["loc"][-1] == "email" for error in response.json()["detail"])
+
+
+@pytest.mark.asyncio
+async def test_signup_rejects_short_password(ac):
+    response = await signup(ac, password="short")
+
+    assert response.status_code == 422
+    assert any(
+        error["loc"][-1] == "password" and error["type"] == "string_too_short"
+        for error in response.json()["detail"]
+    )
+

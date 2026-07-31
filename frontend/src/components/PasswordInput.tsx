@@ -7,6 +7,8 @@ type PasswordInputProps = {
     onChange: ChangeEventHandler<HTMLInputElement>;
     placeholder?: string;
     autoComplete?: string;
+    maxLength?: number;
+    invalid?: boolean;
 };
 
 function PasswordInput({
@@ -15,6 +17,8 @@ function PasswordInput({
     onChange,
     placeholder = "••••••••",
     autoComplete,
+    maxLength,
+    invalid = false,
 }: PasswordInputProps) {
     const [isVisible, setIsVisible] = useState(false);
 
@@ -22,12 +26,14 @@ function PasswordInput({
         <div className="relative">
             <input
                 id={id}
-                className="field-input pr-11"
+                className={`${invalid ? "field-input-error" : "field-input"} pr-11`}
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
                 type={isVisible ? "text" : "password"}
                 autoComplete={autoComplete}
+                maxLength={maxLength}
+                aria-invalid={invalid}
             />
             <button
                 type="button"
