@@ -1,3 +1,5 @@
+import { useState, type PointerEvent } from "react";
+import { createPortal } from "react-dom";
 import type { ActivityDay } from "../types/statistics";
 
 type HeatmapCell = {
@@ -14,6 +16,17 @@ type MonthLabel = {
     label: string;
     weekIndex: number;
 };
+
+type TooltipState = {
+    text: string;
+    left: number;
+    top: number;
+    placement: "above" | "below";
+};
+
+const TOOLTIP_WIDTH = 220;
+const TOOLTIP_VIEWPORT_MARGIN = 8;
+const TOOLTIP_OFFSET = 8;
 
 function toDateKey(date: Date): string {
     const year = date.getFullYear();
@@ -143,9 +156,37 @@ type ActivityHeatmapProps = {
 function ActivityHeatmap({ days }: ActivityHeatmapProps) {
     const { weeks, months } = buildHeatmap(days);
     const weekdayLabels = ["Mon", "", "Wed", "", "Fri", "", ""];
+    const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+
+    function showTooltip(
+        event: PointerEvent<HTMLDivElement>,
+        cell: HeatmapCell
+    ) {
+        const cellBounds = event.currentTarget.getBoundingClientRect();
+        const centeredLeft = cellBounds.left + cellBounds.width / 2 - TOOLTIP_WIDTH / 2;
+        const maxLeft = Math.max(
+            TOOLTIP_VIEWPORT_MARGIN,
+            window.innerWidth - TOOLTIP_WIDTH - TOOLTIP_VIEWPORT_MARGIN
+        );
+        const left = Math.min(
+            Math.max(centeredLeft, TOOLTIP_VIEWPORT_MARGIN),
+            maxLeft
+        );
+        const showBelow = cellBounds.top < 48;
+        const top = showBelow
+            ? cellBounds.bottom + TOOLTIP_OFFSET
+            : cellBounds.top - TOOLTIP_OFFSET;
+
+        setTooltip({
+            text: formatTooltip(cell.date, cell.count),
+            left,
+            top,
+            placement: showBelow ? "below" : "above",
+        });
+    }
 
     return (
-        <div className="overflow-x-auto pb-1">
+        <div className="overflow-x-auto pb-1" onScroll={() => setTooltip(null)}>
             <div className="inline-block min-w-full">
                 <div className="mb-1.5 flex">
                     <div className="w-7 shrink-0" />
@@ -194,7 +235,10 @@ function ActivityHeatmap({ days }: ActivityHeatmapProps) {
                                     return (
                                         <div
                                             key={cell.date}
-                                            title={formatTooltip(cell.date, cell.count)}
+                                            role="img"
+                                            aria-label={formatTooltip(cell.date, cell.count)}
+                                            onPointerEnter={(event) => showTooltip(event, cell)}
+                                            onPointerLeave={() => setTooltip(null)}
                                             className={`h-[11px] w-[11px] rounded-[2px] ${LEVEL_CLASS[cell.level]}`}
                                         />
                                     );
@@ -215,6 +259,25 @@ function ActivityHeatmap({ days }: ActivityHeatmapProps) {
                     <span>More</span>
                 </div>
             </div>
+
+            {tooltip &&
+                createPortal(
+                    <div
+                        role="tooltip"
+                        className="pointer-events-none fixed z-50 w-[min(220px,calc(100vw-16px))] rounded-md bg-slate-900 px-2.5 py-1.5 text-center text-xs font-medium text-white shadow-lg dark:bg-slate-100 dark:text-slate-900"
+                        style={{
+                            left: `${tooltip.left}px`,
+                            top: `${tooltip.top}px`,
+                            transform:
+                                tooltip.placement === "above"
+                                    ? "translateY(-100%)"
+                                    : undefined,
+                        }}
+                    >
+                        {tooltip.text}
+                    </div>,
+                    document.body
+                )}
         </div>
     );
 }
